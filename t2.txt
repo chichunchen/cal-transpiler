@@ -1,0 +1,12 @@
+(program
+	[ (:= "i" (call getint))
+		(:= "j" (call getint))
+		(while
+			(!= "i" "j")
+			(if
+				(> "i" "j")
+				(:= "i" (- "i" "j")
+				(:= "j" (- "j" "i")))
+			(call putint "i")))
+	]
+)
