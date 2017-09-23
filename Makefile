@@ -3,11 +3,23 @@
 
 # Note that rule for goal (parse) must be the first one in this file.
 
+CC = gcc
+CFLAGS = -g -Wall -O2
+
 parse: parse.o scan.o
-	gcc -o parse parse.o scan.o
+	$(CC) $(CFLAGS) -o parse parse.o scan.o
 
 clean:
 	rm *.o parse
+
+test01:
+	./parse < test01.txt
+
+test02:
+	./parse < test02.txt
+
+test03:
+	./parse < test03.txt
 
 parse.o: scan.h
 scan.o: scan.h
