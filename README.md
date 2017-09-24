@@ -6,7 +6,7 @@
 - [ ] Write test cases with Makefile
     - [ ] testXX.txt as the code of calculator language
     - [ ] outputXX.txt as the output AST for the correspondent testXX.txt
-- [ ] Extend the language with if and do/check statements
+- [X] Extend the language with if and do/check statements
 - [ ] Implement exception-based syntax error recovery, as described in Section 2.3.5 on the textbook’s companion site. At the least, you should attach handlers to statements, relations, and expressions. 
 - [ ] Output a syntax tree with the structure suggested
 
@@ -58,7 +58,7 @@ do check n > 0
    fi
    cp := cp + 1
 od
-$$
+$$  <--- do not need to write in the file I guess
 ```
 
 ### AST Output

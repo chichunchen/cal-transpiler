@@ -12,8 +12,13 @@
 
 using namespace std;
 
+/*
+ * the order must be same as token
+ */
 const char* names[] = {"read", "write", "id", "literal", "gets",
-                       "add", "sub", "mul", "div", "lparen", "rparen", "eof"};
+                       "add", "sub", "mul", "div", "lparen", "rparen", "eof",
+                       "if", "fi", "do", "od", "check", "ro",
+                       "eq", "noteq", "lt", "gt", "lte", "gte" };
 
 static token input_token;
 
@@ -36,11 +41,14 @@ void match (token expected) {
 void program ();
 void stmt_list ();
 void stmt ();
+void relation ();
 void expr ();
+void expr_tail();
 void term_tail ();
 void term ();
 void factor_tail ();
 void factor ();
+void relation_op();
 void add_op ();
 void mul_op ();
 
@@ -49,6 +57,9 @@ void program () {
         case t_id:
         case t_read:
         case t_write:
+        case t_if:
+        case t_do:
+        case t_check:
         case t_eof:
             cout << "predict program --> stmt_list eof" << endl;
             stmt_list ();
@@ -63,6 +74,9 @@ void stmt_list () {
         case t_id:
         case t_read:
         case t_write:
+        case t_if:
+        case t_do:
+        case t_check:
             cout << "predict stmt_list --> stmt stmt_list" << endl;
             stmt ();
             stmt_list ();
@@ -70,7 +84,9 @@ void stmt_list () {
         case t_eof:
             cout << "predict stmt_list --> epsilon" << endl;
             break;          /*  epsilon production */
-        default: error ();
+        default: // error ();
+            cout << "predict stmt_list --> epsilon" << endl;
+            break;          /*  epsilon production */
     }
 }
 
@@ -88,9 +104,40 @@ void stmt () {
             match (t_id);
             break;
         case t_write:
-            cout << "predict stmt --> write expr" << endl;
+            cout << "predict stmt --> write relation" << endl;
             match (t_write);
-            expr ();
+            relation ();
+            break;
+        case t_if:
+            cout << "predict stmt --> if R SL fi" << endl;
+            match (t_if);
+            relation ();
+            stmt_list ();
+            match (t_fi);
+            break;
+        case t_do:
+            cout << "predict stmt --> do SL od" << endl;
+            match (t_do);
+            stmt_list ();
+            match (t_od);
+            break;
+        case t_check:
+            cout << "predict stmt --> check R" << endl;
+            match (t_check);
+            relation ();
+            break;
+        default: error ();
+    }
+}
+
+void relation() {
+    switch (input_token) {
+        case t_id:
+        case t_literal:
+        case t_lparen:
+            cout << "predict relation --> expr expr_tail" << endl;
+            expr();
+            expr_tail ();
             break;
         default: error ();
     }
@@ -106,6 +153,22 @@ void expr () {
             term_tail ();
             break;
         default: error ();
+    }
+}
+
+void expr_tail() {
+    switch (input_token) {
+        case t_eq:
+        case t_noteq:
+        case t_lt:
+        case t_gt:
+        case t_lte:
+        case t_gte:
+            relation_op();
+            expr();
+            break;
+        default:
+            cout << "predict expr_tail --> epsilon" << endl;
     }
 }
 
@@ -125,7 +188,9 @@ void term_tail () {
         case t_eof:
             cout << "predict term_tail --> epsilon" << endl;
             break;          /*  epsilon production */
-        default: error ();
+        default: // error ();
+            cout << "predict term_tail --> epsilon" << endl;
+            break;          /*  epsilon production */
     }
 }
 
@@ -160,7 +225,9 @@ void factor_tail () {
         case t_eof:
             cout << "predict factor_tail --> epsilon" << endl;
             break;          /*  epsilon production */
-        default: error ();
+        default: // error ();
+            cout << "predict factor_tail --> epsilon" << endl;
+            break;          /*  epsilon production */
     }
 }
 
@@ -177,8 +244,38 @@ void factor () {
         case t_lparen:
             cout << "predict factor --> lparen expr rparen" << endl;
             match (t_lparen);
-            expr ();
+            relation ();
             match (t_rparen);
+            break;
+        default: error ();
+    }
+}
+
+void relation_op() {
+    switch (input_token) {
+        case t_eq:
+            cout << "predict relation_op --> ==" << endl;
+            match (t_eq);
+            break;
+        case t_noteq:
+            cout << "predict relation_op --> <>" << endl;
+            match (t_noteq);
+            break;
+        case t_lt:
+            cout << "predict relation_op --> <" << endl;
+            match (t_lt);
+            break;
+        case t_gt:
+            cout << "predict relation_op --> >" << endl;
+            match (t_gt);
+            break;
+        case t_lte:
+            cout << "predict relation_op --> <=" << endl;
+            match (t_lte);
+            break;
+        case t_gte:
+            cout << "predict relation_op --> >=" << endl;
+            match (t_gte);
             break;
         default: error ();
     }
