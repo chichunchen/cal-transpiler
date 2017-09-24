@@ -81,12 +81,15 @@ void stmt_list () {
             stmt ();
             stmt_list ();
             break;
+        /* Follow(stmt) */
         case t_eof:
+        case t_fi:
+        case t_od:
             cout << "predict stmt_list --> epsilon" << endl;
             break;          /*  epsilon production */
-        default: // error ();
-            cout << "predict stmt_list --> epsilon" << endl;
-            break;          /*  epsilon production */
+        default:
+            cout << "error: " << input_token << endl;
+            error ();
     }
 }
 
@@ -167,8 +170,14 @@ void expr_tail() {
             relation_op();
             expr();
             break;
-        default:
+        /* Follow(E)
+        case t_eof:
+        case t_id:
             cout << "predict expr_tail --> epsilon" << endl;
+            break;
+        default:
+            cout << "error: " << input_token << endl;
+            error();
     }
 }
 
@@ -186,11 +195,23 @@ void term_tail () {
         case t_read:
         case t_write:
         case t_eof:
+        case t_eq:
+        case t_noteq:
+        case t_gt:
+        case t_lt:
+        case t_gte:
+        case t_lte:
+        case t_if:
+        case t_fi:
+        case t_do:
+        case t_od:
+        case t_check:
+        case t_ro:
             cout << "predict term_tail --> epsilon" << endl;
             break;          /*  epsilon production */
-        default: // error ();
-            cout << "predict term_tail --> epsilon" << endl;
-            break;          /*  epsilon production */
+        default:
+            error ();
+            break;
     }
 }
 
@@ -216,6 +237,7 @@ void factor_tail () {
             factor ();
             factor_tail ();
             break;
+        /* Follow(factor_tail) */
         case t_add:
         case t_sub:
         case t_rparen:
@@ -223,11 +245,23 @@ void factor_tail () {
         case t_read:
         case t_write:
         case t_eof:
+        case t_eq:
+        case t_noteq:
+        case t_gt:
+        case t_lt:
+        case t_gte:
+        case t_lte:
+        case t_if:
+        case t_fi:
+        case t_do:
+        case t_od:
+        case t_check:
+        case t_ro:
             cout << "predict factor_tail --> epsilon" << endl;
             break;          /*  epsilon production */
-        default: // error ();
-            cout << "predict factor_tail --> epsilon" << endl;
-            break;          /*  epsilon production */
+        default:
+            cout << "error: " << input_token << endl;
+            error ();
     }
 }
 

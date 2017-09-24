@@ -1,3 +1,6 @@
 parse
 *.o
 output**.txt
+.idea/
+CMakeLists.txt
+cmake-build-debug/
