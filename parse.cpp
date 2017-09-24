@@ -170,9 +170,11 @@ void expr_tail() {
             relation_op();
             expr();
             break;
-        /* Follow(E)
+        /* Follow(E) */
         case t_eof:
         case t_id:
+        case t_read:
+        case t_write:
             cout << "predict expr_tail --> epsilon" << endl;
             break;
         default:

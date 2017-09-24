@@ -1,7 +1,0 @@
-predict program --> stmt_list eof
-predict stmt_list --> stmt stmt_list
-predict stmt --> read id
-matched read
-matched id: A
-predict stmt_list --> epsilon
-matched eof
