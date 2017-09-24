@@ -1,7 +1,8 @@
 # A2
 
 ### TODO
-- [ ] Translate the code to c++
+- [X] Translate the code to c++ (no error in g++)
+    - [ ] Translate to c++ style
 - [ ] Write test cases with Makefile
     - [ ] testXX.txt as the code of calculator language
     - [ ] outputXX.txt as the output AST for the correspondent testXX.txt

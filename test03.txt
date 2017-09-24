@@ -1,1 +1,5 @@
-sum := (A + B) / 2
+read A
+read B
+sum := A + B
+write sum
+write sum / 2

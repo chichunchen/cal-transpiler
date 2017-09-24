@@ -1,0 +1,35 @@
+predict program --> stmt_list eof
+predict stmt_list --> stmt stmt_list
+predict stmt --> id gets expr
+matched id: sum
+matched gets
+predict expr --> term term_tail
+predict term --> factor factor_tail
+predict factor --> id
+matched id: A
+predict factor_tail --> epsilon
+predict term_tail --> add_op term term_tail
+predict add_op --> add
+matched add
+predict term --> factor factor_tail
+predict factor --> id
+matched id: B
+predict factor_tail --> epsilon
+predict term_tail --> epsilon
+predict stmt_list --> stmt stmt_list
+predict stmt --> id gets expr
+matched id: sum
+matched gets
+predict expr --> term term_tail
+predict term --> factor factor_tail
+predict factor --> id
+matched id: sum
+predict factor_tail --> mul_op factor factor_tail
+predict mul_op --> div
+matched div
+predict factor --> id
+matched id: C
+predict factor_tail --> epsilon
+predict term_tail --> epsilon
+predict stmt_list --> epsilon
+matched eof

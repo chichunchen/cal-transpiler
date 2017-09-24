@@ -1,2 +1,3 @@
 parse
 *.o
+output**.txt
