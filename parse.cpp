@@ -28,11 +28,15 @@ void error () {
     exit (1);
 }
 
+// 1. match token
+// 2. if it's id or literal, print it
 void match (token expected) {
     if (input_token == expected) {
         PREDICT("matched " << names[input_token]);
-        if (input_token == t_id || input_token == t_literal)
-            PREDICT(": " << token_image);
+        if (input_token == t_id || input_token == t_literal) {
+            PREDICT(": " << "\"" << token_image << "\"");
+            cout << token_image;
+        }
         PREDICT(endl);
         input_token = scan ();
     }
@@ -45,8 +49,8 @@ void stmt ();
 void relation ();
 void expr ();
 void expr_tail();
-void term_tail ();
 void term ();
+void term_tail ();
 void factor_tail ();
 void factor ();
 void relation_op();
@@ -54,6 +58,7 @@ void add_op ();
 void mul_op ();
 
 void program () {
+    cout << "(program" << endl;
     switch (input_token) {
         case t_id:
         case t_read:
@@ -63,7 +68,9 @@ void program () {
         case t_check:
         case t_eof:
             PREDICT("predict program --> stmt_list eof" << endl);
+            cout << "[ ";
             stmt_list ();
+            cout << "]";
             match (t_eof);
             break;
         default: error ();
@@ -79,7 +86,9 @@ void stmt_list () {
         case t_do:
         case t_check:
             PREDICT("predict stmt_list --> stmt stmt_list");
+            cout << "(";
             stmt ();
+            cout << ")" << endl;
             stmt_list ();
             break;
         /* Follow(stmt) */
@@ -98,36 +107,47 @@ void stmt () {
     switch (input_token) {
         case t_id:
             PREDICT("predict stmt --> id gets expr" << endl);
+            cout << ":= ";
             match (t_id);
+            cout << " ";
             match (t_gets);
             expr ();
             break;
         case t_read:
             PREDICT("predict stmt --> read id" << endl);
             match (t_read);
+            cout << "read ";
             match (t_id);
             break;
         case t_write:
             PREDICT("predict stmt --> write relation" << endl);
             match (t_write);
+            cout << "write ";
             relation ();
             break;
         case t_if:
             PREDICT("predict stmt --> if R SL fi" << endl);
             match (t_if);
+            cout << "if ";
             relation ();
+            cout << "[ ";
             stmt_list ();
+            cout << "]";
             match (t_fi);
             break;
         case t_do:
             PREDICT("predict stmt --> do SL od" << endl);
             match (t_do);
+            cout << "do\n";
+            cout << "[ ";
             stmt_list ();
+            cout << "]";
             match (t_od);
             break;
         case t_check:
             PREDICT("predict stmt --> check R" << endl);
             match (t_check);
+            cout << "check ";
             relation ();
             break;
         default: error ();
@@ -184,6 +204,21 @@ void expr_tail() {
     }
 }
 
+void term () {
+    switch (input_token) {
+        case t_id:
+        case t_literal:
+        case t_lparen:
+            PREDICT("predict term --> factor factor_tail" << endl);
+            cout << "(";
+            factor ();
+            factor_tail ();
+            cout << ")";
+            break;
+        default: error ();
+    }
+}
+
 void term_tail () {
     switch (input_token) {
         case t_add:
@@ -215,19 +250,6 @@ void term_tail () {
         default:
             error ();
             break;
-    }
-}
-
-void term () {
-    switch (input_token) {
-        case t_id:
-        case t_literal:
-        case t_lparen:
-            PREDICT("predict term --> factor factor_tail" << endl);
-            factor ();
-            factor_tail ();
-            break;
-        default: error ();
     }
 }
 
@@ -272,11 +294,17 @@ void factor () {
     switch (input_token) {
         case t_id :
             PREDICT("predict factor --> id" << endl);
+            cout << "id ";
+            cout << "\"";
             match (t_id);
+            cout << "\"";
             break;
         case t_literal:
             PREDICT("predict factor --> literal" << endl);
+            cout << "num ";
+            cout << "\"";
             match (t_literal);
+            cout << "\"";
             break;
         case t_lparen:
             PREDICT("predict factor --> lparen expr rparen" << endl);
@@ -293,26 +321,32 @@ void relation_op() {
         case t_eq:
             PREDICT("predict relation_op --> ==" << endl);
             match (t_eq);
+            cout << "==";
             break;
         case t_noteq:
             PREDICT("predict relation_op --> <>" << endl);
             match (t_noteq);
+            cout << "<>";
             break;
         case t_lt:
             PREDICT("predict relation_op --> <" << endl);
             match (t_lt);
+            cout << "<";
             break;
         case t_gt:
             PREDICT("predict relation_op --> >" << endl);
             match (t_gt);
+            cout << ">";
             break;
         case t_lte:
             PREDICT("predict relation_op --> <=" << endl);
             match (t_lte);
+            cout << "<=";
             break;
         case t_gte:
             PREDICT("predict relation_op --> >=" << endl);
             match (t_gte);
+            cout << ">=";
             break;
         default: error ();
     }
@@ -323,10 +357,12 @@ void add_op () {
         case t_add:
             PREDICT("predict add_op --> add" << endl);
             match (t_add);
+            cout << "+ ";
             break;
         case t_sub:
             PREDICT("predict add_op --> sub" << endl);
             match (t_sub);
+            cout << "- ";
             break;
         default: error ();
     }
@@ -337,10 +373,12 @@ void mul_op () {
         case t_mul:
             PREDICT("predict mul_op --> mul" << endl);
             match (t_mul);
+            cout << "* ";
             break;
         case t_div:
             PREDICT("predict mul_op --> div" << endl);
             match (t_div);
+            cout << "/ ";
             break;
         default: error ();
     }
