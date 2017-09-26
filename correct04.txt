@@ -1,0 +1,38 @@
+(program
+[ (read "n")
+(:= "cp" (num "2"))
+(do
+[ (check > (id "n") (num "0"))
+(:= "found" (num "0"))
+(:= "cf1" (num "2"))
+(:= "cf1s" (* (id "cf1") (id "cf1")))
+(do
+[ (check <= (id "cf1s") (id "cp"))
+(:= "cf2" (num "2"))
+(:= "pr" (* (id "cf1") (id "cf2")))
+(do
+[ (check <= (id "pr") (id "cp"))
+(if
+(== (id "pr") (id "cp"))
+[ (:= "found" (num "1"))
+]
+)
+(:= "cf2" (+ (id "cf2") (num "1")))
+(:= "pr" (* (id "cf1") (id "cf2")))
+]
+)
+(:= "cf1" (+ (id "cf1") (num "1")))
+(:= "cf1s" (* (id "cf1") (id "cf1")))
+]
+)
+(if
+(== (id "found") (num "0"))
+[ (write (id "cp"))
+(:= "n" (- (id "n") (num "1")))
+]
+)
+(:= "cp" (+ (id "cp") (num "1")))
+]
+)
+]
+)

@@ -14,6 +14,20 @@
 using namespace std;
 
 /*
+ * ast structs
+ */
+typedef struct _node {
+    token type;
+    char name[100];
+} node;
+
+typedef struct _bin_op {
+    token op;
+    node* l_child;
+    node* r_child;
+} bin_op;
+
+/*
  * the order must be same as token
  */
 const char* names[] = {"read", "write", "id", "literal", "gets",
@@ -35,7 +49,7 @@ void match (token expected) {
         PREDICT("matched " << names[input_token]);
         if (input_token == t_id || input_token == t_literal) {
             PREDICT(": " << "\"" << token_image << "\"");
-            AST(token_image);
+            //AST(token_image);
         }
         PREDICT(endl);
         input_token = scan ();
@@ -47,15 +61,15 @@ void program ();
 void stmt_list ();
 void stmt ();
 void relation ();
-void expr ();
-void expr_tail();
-void term ();
-void term_tail ();
-void factor_tail ();
-void factor ();
-void relation_op();
-void add_op ();
-void mul_op ();
+void expr (bin_op*);
+void expr_tail(bin_op*);
+void term (bin_op*);
+void term_tail (bin_op*);
+void factor_tail (bin_op*);
+void factor (bin_op*);
+void relation_op(bin_op*);
+void add_op (bin_op*);
+void mul_op (bin_op*);
 
 void program () {
     AST("(program" << endl);
@@ -70,7 +84,7 @@ void program () {
             PREDICT("predict program --> stmt_list eof" << endl);
             AST("[ ");
             stmt_list ();
-            AST("]");
+            AST("]" << endl << ")");
             match (t_eof);
             break;
         default: error ();
@@ -114,18 +128,22 @@ void stmt () {
         case t_id:
             PREDICT("predict stmt --> id gets expr" << endl);
             AST(":= ");
+            cout << "\"";
+            AST(token_image);
+            cout << "\"";
             match (t_id);
             AST(" ");
             match (t_gets);
             // the bracket only show while there is more than one child
-            //AST("(");
             relation ();
-            //AST(")");
             break;
         case t_read:
             PREDICT("predict stmt --> read id" << endl);
             match (t_read);
             AST("read ");
+            cout << "\"";
+            AST(token_image);
+            cout << "\"";
             match (t_id);
             break;
         case t_write:
@@ -138,13 +156,10 @@ void stmt () {
             PREDICT("predict stmt --> if R SL fi" << endl);
             match (t_if);
             AST("if\n");
-            AST("(");
             relation ();
-            AST(")");
-            AST(endl);
-            AST("[ ");
+            AST(endl << "[ ");
             stmt_list ();
-            AST("]");
+            AST("]" << endl);
             match (t_fi);
             break;
         case t_do:
@@ -153,7 +168,7 @@ void stmt () {
             AST("do\n");
             AST("[ ");
             stmt_list ();
-            AST("]");
+            AST("]" << endl);
             match (t_od);
             break;
         case t_check:
@@ -167,32 +182,86 @@ void stmt () {
 }
 
 void relation() {
+    bin_op* binary_op = (bin_op*) malloc(sizeof(bin_op));
+    binary_op->op = t_none;
+    binary_op->l_child = NULL;
+    binary_op->l_child = NULL;
+
     switch (input_token) {
         case t_id:
         case t_literal:
         case t_lparen:
             PREDICT("predict relation --> expr expr_tail" << endl);
-            expr();
-            expr_tail ();
+            expr(binary_op);
+            expr_tail (binary_op);
+
+            if (binary_op->op != t_none) {
+                cout << "(" << names[binary_op->op] << " ";
+                if (binary_op->l_child != NULL) {
+                    if (binary_op->l_child->type == t_id) {
+                        cout << "(id \"";
+                        cout << binary_op->l_child->name;
+                        cout << "\") ";
+                    }
+                    else if (binary_op->l_child->type == t_literal) {
+                        cout << "(num \"";
+                        cout << binary_op->l_child->name;
+                        cout << "\")";
+                    }
+                }
+                if (binary_op->r_child != NULL) {
+                    if (binary_op->r_child->type == t_id) {
+                        cout << "(id \"";
+                        cout << binary_op->r_child->name;
+                        cout << "\")";
+                    }
+                    else if (binary_op->r_child->type == t_literal) {
+                        cout << " (num \"";
+                        cout << binary_op->r_child->name;
+                        cout << "\")";
+                    }
+                }
+                cout << ")";
+            } else {
+                if (binary_op->l_child != NULL) {
+                    if (binary_op->l_child->type == t_id) {
+                        cout << "(id \"";
+                        cout << binary_op->l_child->name;
+                        cout << "\")";
+                    }
+                    else if (binary_op->l_child->type == t_literal) {
+                        cout << "(num \"";
+                        cout << binary_op->l_child->name;
+                        cout << "\")";
+                    }
+                }
+            }
+
+            if (!binary_op->l_child)
+                free(binary_op->l_child);
+            if (!binary_op->r_child)
+                free(binary_op->r_child);
+            free(binary_op);
+
             break;
         default: error ();
     }
 }
 
-void expr () {
+void expr (bin_op* binary_op) {
     switch (input_token) {
         case t_id:
         case t_literal:
         case t_lparen:
             PREDICT("predict expr --> term term_tail" << endl);
-            term ();
-            term_tail ();
+            term (binary_op);
+            term_tail (binary_op);
             break;
         default: error ();
     }
 }
 
-void expr_tail() {
+void expr_tail(bin_op* binary_op) {
     switch (input_token) {
         case t_eq:
         case t_noteq:
@@ -200,8 +269,8 @@ void expr_tail() {
         case t_gt:
         case t_lte:
         case t_gte:
-            relation_op();
-            expr();
+            relation_op(binary_op);
+            expr(binary_op);
             break;
         /* Follow(E) */
         case t_eof:
@@ -216,32 +285,32 @@ void expr_tail() {
             PREDICT("predict expr_tail --> epsilon" << endl);
             break;
         default:
-            AST("error: " << input_token << endl);
+            cerr << "error: " << input_token << endl;
             error();
     }
 }
 
-void term () {
+void term (bin_op* binary_op) {
     switch (input_token) {
         case t_id:
         case t_literal:
         case t_lparen:
             PREDICT("predict term --> factor factor_tail" << endl);
-            factor ();
-            factor_tail ();
+            factor (binary_op);
+            factor_tail (binary_op);
             break;
         default: error ();
     }
 }
 
-void term_tail () {
+void term_tail (bin_op* binary_op) {
     switch (input_token) {
         case t_add:
         case t_sub:
             PREDICT("predict term_tail --> add_op term term_tail" << endl);
-            add_op ();
-            term ();
-            term_tail ();
+            add_op (binary_op);
+            term (binary_op);
+            term_tail (binary_op);
             break;
         case t_rparen:
         case t_id:
@@ -261,20 +330,18 @@ void term_tail () {
         case t_check:
             PREDICT("predict term_tail --> epsilon" << endl);
             break;          /*  epsilon production */
-        default:
-            error ();
-            break;
+        default: error ();
     }
 }
 
-void factor_tail () {
+void factor_tail (bin_op* binary_op) {
     switch (input_token) {
         case t_mul:
         case t_div:
             PREDICT("predict factor_tail --> mul_op factor factor_tail" << endl);
-            mul_op ();
-            factor ();
-            factor_tail ();
+            mul_op (binary_op);
+            factor (binary_op);
+            factor_tail (binary_op);
             break;
         /* Follow(factor_tail) */
         case t_add:
@@ -298,26 +365,45 @@ void factor_tail () {
             PREDICT("predict factor_tail --> epsilon" << endl);
             break;          /*  epsilon production */
         default:
-            AST("error: " << input_token << endl);
+            cerr << "error: " << input_token << endl;
             error ();
     }
 }
 
-void factor () {
+void factor (bin_op* binary_op) {
+    node* child;
+
     switch (input_token) {
         case t_id :
             PREDICT("predict factor --> id" << endl);
-            AST("(id ");
-            AST("\"");
+
+            child = (node *) malloc(sizeof(node));
+            child->type = t_id;
+            strcpy(child->name, token_image);
+
             match (t_id);
-            AST("\")");
+
+            if (binary_op->l_child == NULL)
+                binary_op->l_child = child;
+            else {
+                binary_op->r_child = child;
+            }
+
             break;
         case t_literal:
             PREDICT("predict factor --> literal" << endl);
-            AST("(num ");
-            AST("\"");
+
+            child = (node *) malloc(sizeof(node));
+            child->type = t_literal;
+            strcpy(child->name, token_image);
+
             match (t_literal);
-            AST("\")");
+
+            if (binary_op->l_child == NULL)
+                binary_op->l_child = child;
+            else
+                binary_op->r_child = child;
+
             break;
         case t_lparen:
             PREDICT("predict factor --> lparen expr rparen" << endl);
@@ -329,69 +415,81 @@ void factor () {
     }
 }
 
-void relation_op() {
+void relation_op(bin_op* binary_op) {
     switch (input_token) {
         case t_eq:
             PREDICT("predict relation_op --> ==" << endl);
             match (t_eq);
-            AST("==");
+            //AST("==");
+            binary_op->op = t_eq;
             break;
         case t_noteq:
             PREDICT("predict relation_op --> <>" << endl);
             match (t_noteq);
-            AST("<>");
+            //AST("<>");
+            binary_op->op = t_noteq;
             break;
         case t_lt:
             PREDICT("predict relation_op --> <" << endl);
             match (t_lt);
-            AST("<");
+            //AST("<");
+            binary_op->op = t_lt;
             break;
         case t_gt:
             PREDICT("predict relation_op --> >" << endl);
             match (t_gt);
-            AST(">");
+            //AST(">");
+            binary_op->op = t_gt;
             break;
         case t_lte:
             PREDICT("predict relation_op --> <=" << endl);
             match (t_lte);
-            AST("<=");
+            //AST("<=");
+            binary_op->op = t_lte;
             break;
         case t_gte:
             PREDICT("predict relation_op --> >=" << endl);
             match (t_gte);
-            AST(">=");
+            //AST(">=");
+            binary_op->op = t_gte;
             break;
         default: error ();
     }
+
+    //cout << endl << "test: " << binary_op->op << endl;
 }
 
-void add_op () {
+void add_op (bin_op* binary_op) {
     switch (input_token) {
         case t_add:
             PREDICT("predict add_op --> add" << endl);
             match (t_add);
-            AST("+ ");
+            //AST("+ ");
+            binary_op->op = t_add;
             break;
         case t_sub:
             PREDICT("predict add_op --> sub" << endl);
             match (t_sub);
-            AST("- ");
+            //AST("- ");
+            binary_op->op = t_sub;
             break;
         default: error ();
     }
 }
 
-void mul_op () {
+void mul_op (bin_op* binary_op) {
     switch (input_token) {
         case t_mul:
             PREDICT("predict mul_op --> mul" << endl);
             match (t_mul);
-            AST("* ");
+            //AST("* ");
+            binary_op->op = t_mul;
             break;
         case t_div:
             PREDICT("predict mul_op --> div" << endl);
             match (t_div);
-            AST("/ ");
+            //AST("/ ");
+            binary_op->op = t_div;
             break;
         default: error ();
     }

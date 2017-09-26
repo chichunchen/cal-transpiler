@@ -10,8 +10,8 @@
 - [ ] Implement exception-based syntax error recovery, as described in Section 2.3.5 on the textbook’s companion site. At the least, you should attach handlers to statements, relations, and expressions. 
 - [ ] Output a syntax tree with the structure suggested
     - [ ] Build a abstract syntax tree
-    - [ ] Order of operator
-    - [ ] Shows bracket in R if more than one child
+    - [X] Order of operator
+    - [X] Shows bracket in R if more than one child
 
 ### Extended Grammar
 - Here the new nonterminal R is meant to suggest a “relation.”  As in C, a value of 0 is taken to be false; anything else is true.
