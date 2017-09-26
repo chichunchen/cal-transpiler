@@ -46,12 +46,12 @@ void error () {
 
 // 1. match token
 // 2. if it's id or literal, print it
-void match (token expected) {
+void match (token expected, bool print) {
     if (input_token == expected) {
         PREDICT("matched " << names[input_token]);
         if (input_token == t_id || input_token == t_literal) {
             PREDICT(": " << "\"" << token_image << "\"");
-            //AST(token_image);
+            if (print) AST(token_image);
         }
         PREDICT(endl);
         input_token = scan ();
@@ -76,6 +76,7 @@ void mul_op (bin_op*);
 void program () {
     AST("(program" << endl);
     switch (input_token) {
+        /* First(program) */
         case t_id:
         case t_read:
         case t_write:
@@ -86,15 +87,17 @@ void program () {
             PREDICT("predict program --> stmt_list eof" << endl);
             AST("[ ");
             stmt_list ();
-            AST("]" << endl << ")");
-            match (t_eof);
+            AST("]");
+            match (t_eof, false);
             break;
         default: error ();
     }
+    AST(endl << ")");
 }
 
 void stmt_list () {
     switch (input_token) {
+        /* First(stmt_list) */
         case t_id:
         case t_read:
         case t_write:
@@ -107,16 +110,10 @@ void stmt_list () {
             AST(")" << endl);
             stmt_list ();
             break;
-        /* Follow(stmt), since stmt_list is epsilon */
+        /* Follow(stmt_list) has (Follow(stmt) and Follow(R)) */
         case t_eof:
         case t_fi:
         case t_od:
-        case t_lparen:
-        case t_add:
-        case t_sub:
-        case t_mul:
-        case t_div:
-        case t_literal:
             PREDICT("predict stmt_list --> epsilon" << endl);
             break;          /*  epsilon production */
         default:
@@ -131,51 +128,49 @@ void stmt () {
             PREDICT("predict stmt --> id gets expr" << endl);
             AST(":= ");
             AST("\"");
-            AST(token_image);
+            match (t_id, true);
             AST("\"");
-            match (t_id);
             AST(" ");
-            match (t_gets);
+            match (t_gets, false);
             // the bracket only show while there is more than one child
             relation ();
             break;
         case t_read:
             PREDICT("predict stmt --> read id" << endl);
-            match (t_read);
+            match (t_read, false);
             AST("read ");
             AST("\"");
-            AST(token_image);
+            match (t_id, true);
             AST("\"");
-            match (t_id);
             break;
         case t_write:
             PREDICT("predict stmt --> write relation" << endl);
-            match (t_write);
+            match (t_write, false);
             AST("write ");
             relation ();
             break;
         case t_if:
             PREDICT("predict stmt --> if R SL fi" << endl);
-            match (t_if);
+            match (t_if, false);
             AST("if\n");
             relation ();
             AST(endl << "[ ");
             stmt_list ();
             AST("]" << endl);
-            match (t_fi);
+            match (t_fi, false);
             break;
         case t_do:
             PREDICT("predict stmt --> do SL od" << endl);
-            match (t_do);
+            match (t_do, false);
             AST("do\n");
             AST("[ ");
             stmt_list ();
             AST("]" << endl);
-            match (t_od);
+            match (t_od, false);
             break;
         case t_check:
             PREDICT("predict stmt --> check R" << endl);
-            match (t_check);
+            match (t_check, false);
             AST("check ");
             relation ();
             break;
@@ -383,7 +378,7 @@ void factor (bin_op* binary_op) {
             child->type = t_id;
             strcpy(child->name, token_image);
 
-            match (t_id);
+            match (t_id, false);
 
             if (binary_op->l_child == NULL)
                 binary_op->l_child = child;
@@ -399,7 +394,7 @@ void factor (bin_op* binary_op) {
             child->type = t_literal;
             strcpy(child->name, token_image);
 
-            match (t_literal);
+            match (t_literal, false);
 
             if (binary_op->l_child == NULL)
                 binary_op->l_child = child;
@@ -409,9 +404,9 @@ void factor (bin_op* binary_op) {
             break;
         case t_lparen:
             PREDICT("predict factor --> lparen expr rparen" << endl);
-            match (t_lparen);
+            match (t_lparen, false);
             relation ();
-            match (t_rparen);
+            match (t_rparen, false);
             break;
         default: error ();
     }
@@ -421,38 +416,32 @@ void relation_op(bin_op* binary_op) {
     switch (input_token) {
         case t_eq:
             PREDICT("predict relation_op --> ==" << endl);
-            match (t_eq);
-            //AST("==");
+            match (t_eq, false);
             binary_op->op = t_eq;
             break;
         case t_noteq:
             PREDICT("predict relation_op --> <>" << endl);
-            match (t_noteq);
-            //AST("<>");
+            match (t_noteq, false);
             binary_op->op = t_noteq;
             break;
         case t_lt:
             PREDICT("predict relation_op --> <" << endl);
-            match (t_lt);
-            //AST("<");
+            match (t_lt, false);
             binary_op->op = t_lt;
             break;
         case t_gt:
             PREDICT("predict relation_op --> >" << endl);
-            match (t_gt);
-            //AST(">");
+            match (t_gt, false);
             binary_op->op = t_gt;
             break;
         case t_lte:
             PREDICT("predict relation_op --> <=" << endl);
-            match (t_lte);
-            //AST("<=");
+            match (t_lte, false);
             binary_op->op = t_lte;
             break;
         case t_gte:
             PREDICT("predict relation_op --> >=" << endl);
-            match (t_gte);
-            //AST(">=");
+            match (t_gte, false);
             binary_op->op = t_gte;
             break;
         default: error ();
@@ -465,14 +454,12 @@ void add_op (bin_op* binary_op) {
     switch (input_token) {
         case t_add:
             PREDICT("predict add_op --> add" << endl);
-            match (t_add);
-            //AST("+ ");
+            match (t_add, false);
             binary_op->op = t_add;
             break;
         case t_sub:
             PREDICT("predict add_op --> sub" << endl);
-            match (t_sub);
-            //AST("- ");
+            match (t_sub, false);
             binary_op->op = t_sub;
             break;
         default: error ();
@@ -483,14 +470,12 @@ void mul_op (bin_op* binary_op) {
     switch (input_token) {
         case t_mul:
             PREDICT("predict mul_op --> mul" << endl);
-            match (t_mul);
-            //AST("* ");
+            match (t_mul, false);
             binary_op->op = t_mul;
             break;
         case t_div:
             PREDICT("predict mul_op --> div" << endl);
-            match (t_div);
-            //AST("/ ");
+            match (t_div, false);
             binary_op->op = t_div;
             break;
         default: error ();
