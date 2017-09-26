@@ -117,7 +117,10 @@ void stmt () {
             match (t_id);
             cout << " ";
             match (t_gets);
+            // the bracket only show while there is more than one child
+            //cout << "(";
             relation ();
+            //cout << ")";
             break;
         case t_read:
             PREDICT("predict stmt --> read id" << endl);
@@ -224,10 +227,8 @@ void term () {
         case t_literal:
         case t_lparen:
             PREDICT("predict term --> factor factor_tail" << endl);
-            cout << "(";
             factor ();
             factor_tail ();
-            cout << ")";
             break;
         default: error ();
     }
@@ -306,17 +307,17 @@ void factor () {
     switch (input_token) {
         case t_id :
             PREDICT("predict factor --> id" << endl);
-            cout << "id ";
+            cout << "(id ";
             cout << "\"";
             match (t_id);
-            cout << "\"";
+            cout << "\")";
             break;
         case t_literal:
             PREDICT("predict factor --> literal" << endl);
-            cout << "num ";
+            cout << "(num ";
             cout << "\"";
             match (t_literal);
-            cout << "\"";
+            cout << "\")";
             break;
         case t_lparen:
             PREDICT("predict factor --> lparen expr rparen" << endl);
