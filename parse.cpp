@@ -128,9 +128,9 @@ void stmt () {
         case t_id:
             PREDICT("predict stmt --> id gets expr" << endl);
             AST(":= ");
-            cout << "\"";
+            AST("\"");
             AST(token_image);
-            cout << "\"";
+            AST("\"");
             match (t_id);
             AST(" ");
             match (t_gets);
@@ -141,9 +141,9 @@ void stmt () {
             PREDICT("predict stmt --> read id" << endl);
             match (t_read);
             AST("read ");
-            cout << "\"";
+            AST("\"");
             AST(token_image);
-            cout << "\"";
+            AST("\"");
             match (t_id);
             break;
         case t_write:
@@ -196,43 +196,43 @@ void relation() {
             expr_tail (binary_op);
 
             if (binary_op->op != t_none) {
-                cout << "(" << names[binary_op->op] << " ";
+                AST("(" << names[binary_op->op] << " ");
                 if (binary_op->l_child != NULL) {
                     if (binary_op->l_child->type == t_id) {
-                        cout << "(id \"";
-                        cout << binary_op->l_child->name;
-                        cout << "\") ";
+                        AST("(id \"");
+                        AST(binary_op->l_child->name);
+                        AST("\") ");
                     }
                     else if (binary_op->l_child->type == t_literal) {
-                        cout << "(num \"";
-                        cout << binary_op->l_child->name;
-                        cout << "\")";
+                        AST("(num \"");
+                        AST(binary_op->l_child->name);
+                        AST("\")");
                     }
                 }
                 if (binary_op->r_child != NULL) {
                     if (binary_op->r_child->type == t_id) {
-                        cout << "(id \"";
-                        cout << binary_op->r_child->name;
-                        cout << "\")";
+                        AST("(id \"");
+                        AST(binary_op->r_child->name);
+                        AST("\")");
                     }
                     else if (binary_op->r_child->type == t_literal) {
-                        cout << " (num \"";
-                        cout << binary_op->r_child->name;
-                        cout << "\")";
+                        AST(" (num \"");
+                        AST(binary_op->r_child->name);
+                        AST("\")");
                     }
                 }
-                cout << ")";
+                AST(")");
             } else {
                 if (binary_op->l_child != NULL) {
                     if (binary_op->l_child->type == t_id) {
-                        cout << "(id \"";
-                        cout << binary_op->l_child->name;
-                        cout << "\")";
+                        AST("(id \"");
+                        AST(binary_op->l_child->name);
+                        AST("\")");
                     }
                     else if (binary_op->l_child->type == t_literal) {
-                        cout << "(num \"";
-                        cout << binary_op->l_child->name;
-                        cout << "\")";
+                        AST("(num \"");
+                        AST(binary_op->l_child->name);
+                        AST("\")");
                     }
                 }
             }
