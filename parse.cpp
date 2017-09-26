@@ -279,6 +279,7 @@ void expr_tail(bin_op* binary_op) {
         case t_do:
         case t_od:
         case t_check:
+        case t_rparen:
             PREDICT("predict expr_tail --> epsilon" << endl);
             break;
         default:
