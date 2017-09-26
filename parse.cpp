@@ -18,7 +18,7 @@ using namespace std;
  */
 const char* names[] = {"read", "write", "id", "literal", "gets",
                        "add", "sub", "mul", "div", "lparen", "rparen", "eof",
-                       "if", "fi", "do", "od", "check", "ro",
+                       "if", "fi", "do", "od", "check",
                        "eq", "noteq", "lt", "gt", "lte", "gte" };
 
 static token input_token;
@@ -91,10 +91,16 @@ void stmt_list () {
             cout << ")" << endl;
             stmt_list ();
             break;
-        /* Follow(stmt) */
+        /* Follow(stmt), since stmt_list is epsilon */
         case t_eof:
         case t_fi:
         case t_od:
+        case t_lparen:
+        case t_add:
+        case t_sub:
+        case t_mul:
+        case t_div:
+        case t_literal:
             PREDICT("predict stmt_list --> epsilon" << endl);
             break;          /*  epsilon production */
         default:
@@ -128,8 +134,11 @@ void stmt () {
         case t_if:
             PREDICT("predict stmt --> if R SL fi" << endl);
             match (t_if);
-            cout << "if ";
+            cout << "if\n";
+            cout << "(";
             relation ();
+            cout << ")";
+            cout << endl;
             cout << "[ ";
             stmt_list ();
             cout << "]";
@@ -244,7 +253,6 @@ void term_tail () {
         case t_do:
         case t_od:
         case t_check:
-        case t_ro:
             PREDICT("predict term_tail --> epsilon" << endl);
             break;          /*  epsilon production */
         default:
@@ -281,7 +289,6 @@ void factor_tail () {
         case t_do:
         case t_od:
         case t_check:
-        case t_ro:
             PREDICT("predict factor_tail --> epsilon" << endl);
             break;          /*  epsilon production */
         default:
