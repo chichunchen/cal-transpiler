@@ -117,7 +117,7 @@ void stmt () {
             match (t_id);
             cout << " ";
             match (t_gets);
-            expr ();
+            relation ();
             break;
         case t_read:
             PREDICT("predict stmt --> read id" << endl);
@@ -205,6 +205,11 @@ void expr_tail() {
         case t_id:
         case t_read:
         case t_write:
+        case t_if:
+        case t_fi:
+        case t_do:
+        case t_od:
+        case t_check:
             PREDICT("predict expr_tail --> epsilon" << endl);
             break;
         default:
