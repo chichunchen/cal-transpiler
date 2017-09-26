@@ -35,7 +35,7 @@ void match (token expected) {
         PREDICT("matched " << names[input_token]);
         if (input_token == t_id || input_token == t_literal) {
             PREDICT(": " << "\"" << token_image << "\"");
-            cout << token_image;
+            AST(token_image);
         }
         PREDICT(endl);
         input_token = scan ();
@@ -58,7 +58,7 @@ void add_op ();
 void mul_op ();
 
 void program () {
-    cout << "(program" << endl;
+    AST("(program" << endl);
     switch (input_token) {
         case t_id:
         case t_read:
@@ -68,9 +68,9 @@ void program () {
         case t_check:
         case t_eof:
             PREDICT("predict program --> stmt_list eof" << endl);
-            cout << "[ ";
+            AST("[ ");
             stmt_list ();
-            cout << "]";
+            AST("]");
             match (t_eof);
             break;
         default: error ();
@@ -86,9 +86,9 @@ void stmt_list () {
         case t_do:
         case t_check:
             PREDICT("predict stmt_list --> stmt stmt_list");
-            cout << "(";
+            AST("(");
             stmt ();
-            cout << ")" << endl;
+            AST(")" << endl);
             stmt_list ();
             break;
         /* Follow(stmt), since stmt_list is epsilon */
@@ -104,7 +104,7 @@ void stmt_list () {
             PREDICT("predict stmt_list --> epsilon" << endl);
             break;          /*  epsilon production */
         default:
-            cout << "error: " << input_token << endl;
+            AST("error: " << input_token << endl);
             error ();
     }
 }
@@ -113,53 +113,53 @@ void stmt () {
     switch (input_token) {
         case t_id:
             PREDICT("predict stmt --> id gets expr" << endl);
-            cout << ":= ";
+            AST(":= ");
             match (t_id);
-            cout << " ";
+            AST(" ");
             match (t_gets);
             // the bracket only show while there is more than one child
-            //cout << "(";
+            //AST("(");
             relation ();
-            //cout << ")";
+            //AST(")");
             break;
         case t_read:
             PREDICT("predict stmt --> read id" << endl);
             match (t_read);
-            cout << "read ";
+            AST("read ");
             match (t_id);
             break;
         case t_write:
             PREDICT("predict stmt --> write relation" << endl);
             match (t_write);
-            cout << "write ";
+            AST("write ");
             relation ();
             break;
         case t_if:
             PREDICT("predict stmt --> if R SL fi" << endl);
             match (t_if);
-            cout << "if\n";
-            cout << "(";
+            AST("if\n");
+            AST("(");
             relation ();
-            cout << ")";
-            cout << endl;
-            cout << "[ ";
+            AST(")");
+            AST(endl);
+            AST("[ ");
             stmt_list ();
-            cout << "]";
+            AST("]");
             match (t_fi);
             break;
         case t_do:
             PREDICT("predict stmt --> do SL od" << endl);
             match (t_do);
-            cout << "do\n";
-            cout << "[ ";
+            AST("do\n");
+            AST("[ ");
             stmt_list ();
-            cout << "]";
+            AST("]");
             match (t_od);
             break;
         case t_check:
             PREDICT("predict stmt --> check R" << endl);
             match (t_check);
-            cout << "check ";
+            AST("check ");
             relation ();
             break;
         default: error ();
@@ -216,7 +216,7 @@ void expr_tail() {
             PREDICT("predict expr_tail --> epsilon" << endl);
             break;
         default:
-            cout << "error: " << input_token << endl;
+            AST("error: " << input_token << endl);
             error();
     }
 }
@@ -298,7 +298,7 @@ void factor_tail () {
             PREDICT("predict factor_tail --> epsilon" << endl);
             break;          /*  epsilon production */
         default:
-            cout << "error: " << input_token << endl;
+            AST("error: " << input_token << endl);
             error ();
     }
 }
@@ -307,17 +307,17 @@ void factor () {
     switch (input_token) {
         case t_id :
             PREDICT("predict factor --> id" << endl);
-            cout << "(id ";
-            cout << "\"";
+            AST("(id ");
+            AST("\"");
             match (t_id);
-            cout << "\")";
+            AST("\")");
             break;
         case t_literal:
             PREDICT("predict factor --> literal" << endl);
-            cout << "(num ";
-            cout << "\"";
+            AST("(num ");
+            AST("\"");
             match (t_literal);
-            cout << "\")";
+            AST("\")");
             break;
         case t_lparen:
             PREDICT("predict factor --> lparen expr rparen" << endl);
@@ -334,32 +334,32 @@ void relation_op() {
         case t_eq:
             PREDICT("predict relation_op --> ==" << endl);
             match (t_eq);
-            cout << "==";
+            AST("==");
             break;
         case t_noteq:
             PREDICT("predict relation_op --> <>" << endl);
             match (t_noteq);
-            cout << "<>";
+            AST("<>");
             break;
         case t_lt:
             PREDICT("predict relation_op --> <" << endl);
             match (t_lt);
-            cout << "<";
+            AST("<");
             break;
         case t_gt:
             PREDICT("predict relation_op --> >" << endl);
             match (t_gt);
-            cout << ">";
+            AST(">");
             break;
         case t_lte:
             PREDICT("predict relation_op --> <=" << endl);
             match (t_lte);
-            cout << "<=";
+            AST("<=");
             break;
         case t_gte:
             PREDICT("predict relation_op --> >=" << endl);
             match (t_gte);
-            cout << ">=";
+            AST(">=");
             break;
         default: error ();
     }
@@ -370,12 +370,12 @@ void add_op () {
         case t_add:
             PREDICT("predict add_op --> add" << endl);
             match (t_add);
-            cout << "+ ";
+            AST("+ ");
             break;
         case t_sub:
             PREDICT("predict add_op --> sub" << endl);
             match (t_sub);
-            cout << "- ";
+            AST("- ");
             break;
         default: error ();
     }
@@ -386,12 +386,12 @@ void mul_op () {
         case t_mul:
             PREDICT("predict mul_op --> mul" << endl);
             match (t_mul);
-            cout << "* ";
+            AST("* ");
             break;
         case t_div:
             PREDICT("predict mul_op --> div" << endl);
             match (t_div);
-            cout << "/ ";
+            AST("/ ");
             break;
         default: error ();
     }

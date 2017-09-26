@@ -2,7 +2,8 @@
 #define __debug_h__
 
 #define NPREDICT
-//#define DEBUG
+//#define NDEBUG
+//#define NAST
 
 #ifdef NDEBUG
 #define DEBUG(x)
@@ -14,6 +15,12 @@
 #define PREDICT(x)
 #else
 #define PREDICT(x) do { std::cout << x; } while(0)
+#endif
+
+#ifdef NAST
+#define AST(x)
+#else
+#define AST(x) do { std::cout << x; } while (0)
 #endif
 
 #endif
