@@ -7,6 +7,8 @@
 
 #include <iostream>
 #include <cstdlib>
+#include <cstring>
+#include <stdio.h>
 
 #include "scan.h"
 #include "debug.h"

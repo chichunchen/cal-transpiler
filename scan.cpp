@@ -6,6 +6,7 @@
 #include <cstdlib>
 #include <cstring>
 #include <cctype>
+#include <stdio.h>
 
 #include "scan.h"
 
