@@ -69,6 +69,8 @@ void relation_op(bin_op*);
 void add_op (bin_op*);
 void mul_op (bin_op*);
 
+void print_relation(bin_op* root);
+
 void program () {
     AST("(program" << endl);
     switch (input_token) {
@@ -119,6 +121,8 @@ void stmt_list () {
 }
 
 void stmt () {
+    bin_op* root;
+
     switch (input_token) {
         case t_id:
             PREDICT("predict stmt --> id gets expr" << endl);
@@ -126,10 +130,9 @@ void stmt () {
             AST("\"");
             match (t_id, true);
             AST("\"");
-            AST(" ");
             match (t_gets, false);
             // the bracket only show while there is more than one child
-            relation ();
+            print_relation(relation ());
             break;
         case t_read:
             PREDICT("predict stmt --> read id" << endl);
@@ -142,14 +145,14 @@ void stmt () {
         case t_write:
             PREDICT("predict stmt --> write relation" << endl);
             match (t_write, false);
-            AST("write ");
-            relation ();
+            AST("write");
+            print_relation(relation ());
             break;
         case t_if:
             PREDICT("predict stmt --> if R SL fi" << endl);
             match (t_if, false);
             AST("if\n");
-            relation ();
+            print_relation(relation ());
             AST(endl << "[ ");
             stmt_list ();
             AST("]" << endl);
@@ -167,11 +170,47 @@ void stmt () {
         case t_check:
             PREDICT("predict stmt --> check R" << endl);
             match (t_check, false);
-            AST("check ");
-            relation ();
+            AST("check");
+            print_relation(relation ());
             break;
         default: error ();
     }
+}
+
+// prefix tree traversal
+void print_relation(bin_op* root) {
+    if (root->l_child != NULL && root->r_child != NULL)
+        AST(" (");
+
+    if (root) {
+        if (root->type == t_id) {
+            AST("(id \"");
+            AST(root->name);
+            AST("\")");
+        }
+        else if (root->type == t_literal) {
+            AST("(num \"");
+            AST(root->name);
+            AST("\")");
+        }
+        else {
+            // print op
+            AST(root->name);
+        }
+    }
+
+    if (root->l_child) {
+        AST(" ");
+        print_relation(root->l_child);
+    }
+
+    if (root->r_child) {
+        AST(" ");
+        print_relation(root->r_child);
+    }
+
+    if (root->l_child != NULL && root->r_child != NULL)
+        AST(")");
 }
 
 // init with null binary_op and return filled binary_op
@@ -188,55 +227,6 @@ bin_op* relation() {
             PREDICT("predict relation --> expr expr_tail" << endl);
             expr (binary_op);
             expr_tail (binary_op);
-
-//             if (binary_op->op != t_none) {
-//                 AST("(" << names[binary_op->op] << " ");
-//                 if (binary_op->l_child != NULL) {
-//                     if (binary_op->l_child->type == t_id) {
-//                         AST("(id \"");
-//                         AST(binary_op->l_child->name);
-//                         AST("\") ");
-//                     }
-//                     else if (binary_op->l_child->type == t_literal) {
-//                         AST("(num \"");
-//                         AST(binary_op->l_child->name);
-//                         AST("\")");
-//                     }
-//                 }
-//                 if (binary_op->r_child != NULL) {
-//                     if (binary_op->r_child->type == t_id) {
-//                         AST("(id \"");
-//                         AST(binary_op->r_child->name);
-//                         AST("\")");
-//                     }
-//                     else if (binary_op->r_child->type == t_literal) {
-//                         AST(" (num \"");
-//                         AST(binary_op->r_child->name);
-//                         AST("\")");
-//                     }
-//                 }
-//                 AST(")");
-//             } else {
-//                 if (binary_op->l_child != NULL) {
-//                     if (binary_op->l_child->type == t_id) {
-//                         AST("(id \"");
-//                         AST(binary_op->l_child->name);
-//                         AST("\")");
-//                     }
-//                     else if (binary_op->l_child->type == t_literal) {
-//                         AST("(num \"");
-//                         AST(binary_op->l_child->name);
-//                         AST("\")");
-//                     }
-//                 }
-//             }
-// 
-//             if (!binary_op->l_child)
-//                 free(binary_op->l_child);
-//             if (!binary_op->r_child)
-//                 free(binary_op->r_child);
-//             free(binary_op);
-
             break;
         default: error ();
     }
@@ -392,7 +382,7 @@ void factor (bin_op* binary_op) {
             PREDICT("predict factor --> literal" << endl);
 
             child = (bin_op *) malloc(sizeof(bin_op));
-            child->type = t_id;
+            child->type = t_literal;
             strcpy(child->name, token_image);
             child->l_child = NULL;
             child->r_child = NULL;
@@ -410,6 +400,10 @@ void factor (bin_op* binary_op) {
             match (t_lparen, false);
 
             child = relation ();
+            if (binary_op->l_child == NULL)
+                binary_op->l_child = child;
+            else
+                binary_op->r_child = child;
 
             match (t_rparen, false);
             break;
@@ -423,31 +417,37 @@ void relation_op(bin_op* binary_op) {
             PREDICT("predict relation_op --> ==" << endl);
             match (t_eq, false);
             binary_op->type = t_eq;
+            strcpy(binary_op->name, "==");
             break;
         case t_noteq:
             PREDICT("predict relation_op --> <>" << endl);
             match (t_noteq, false);
             binary_op->type = t_noteq;
+            strcpy(binary_op->name, ",.");
             break;
         case t_lt:
             PREDICT("predict relation_op --> <" << endl);
             match (t_lt, false);
             binary_op->type = t_lt;
+            strcpy(binary_op->name, "<");
             break;
         case t_gt:
             PREDICT("predict relation_op --> >" << endl);
             match (t_gt, false);
             binary_op->type = t_gt;
+            strcpy(binary_op->name, ">");
             break;
         case t_lte:
             PREDICT("predict relation_op --> <=" << endl);
             match (t_lte, false);
             binary_op->type = t_lte;
+            strcpy(binary_op->name, "<=");
             break;
         case t_gte:
             PREDICT("predict relation_op --> >=" << endl);
             match (t_gte, false);
             binary_op->type = t_gte;
+            strcpy(binary_op->name, ">=");
             break;
         default: error ();
     }
@@ -461,11 +461,13 @@ void add_op (bin_op* binary_op) {
             PREDICT("predict add_op --> add" << endl);
             match (t_add, false);
             binary_op->type = t_add;
+            strcpy(binary_op->name, "+");
             break;
         case t_sub:
             PREDICT("predict add_op --> sub" << endl);
             match (t_sub, false);
             binary_op->type = t_sub;
+            strcpy(binary_op->name, "-");
             break;
         default: error ();
     }
@@ -477,11 +479,13 @@ void mul_op (bin_op* binary_op) {
             PREDICT("predict mul_op --> mul" << endl);
             match (t_mul, false);
             binary_op->type = t_mul;
+            strcpy(binary_op->name, "*");
             break;
         case t_div:
             PREDICT("predict mul_op --> div" << endl);
             match (t_div, false);
             binary_op->type = t_div;
+            strcpy(binary_op->name, "/");
             break;
         default: error ();
     }
