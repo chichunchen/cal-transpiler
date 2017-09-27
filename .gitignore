@@ -4,3 +4,4 @@ output**.txt
 .idea/
 CMakeLists.txt
 cmake-build-debug/
+a.out

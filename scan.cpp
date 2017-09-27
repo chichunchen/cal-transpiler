@@ -6,7 +6,6 @@
 #include <cstdlib>
 #include <cstring>
 #include <cctype>
-#include <stdio.h>
 
 #include "scan.h"
 
@@ -21,14 +20,14 @@ token scan() {
 
     /* skip white space */
     while (isspace(c)) {
-        c = getchar();
+        c = cin.get();
     }
     if (c == EOF)
         return t_eof;
     if (isalpha(c)) {
         do {
             token_image[i++] = c;
-            c = getchar();
+            c = cin.get();
         } while (isalpha(c) || isdigit(c) || c == '_');
         token_image[i] = '\0';
         if (!strcmp(token_image, "if")) return t_if;
@@ -43,46 +42,48 @@ token scan() {
     else if (isdigit(c)) {
         do {
             token_image[i++] = c;
-            c = getchar();
+            c = cin.get();
         } while (isdigit(c));
         token_image[i] = '\0';
         return t_literal;
     } else switch (c) {
         case ':':
-            if ((c = getchar()) != '=') {
+            c = cin.get();
+            if (c != '=') {
                 cerr << "error" << endl;
                 exit(1);
             } else {
-                c = getchar();
+                c = cin.get();
                 return t_gets;
             }
             break;
-        case '+': c = getchar(); return t_add;
-        case '-': c = getchar(); return t_sub;
-        case '*': c = getchar(); return t_mul;
-        case '/': c = getchar(); return t_div;
-        case '(': c = getchar(); return t_lparen;
-        case ')': c = getchar(); return t_rparen;
+        case '+': c = cin.get(); return t_add;
+        case '-': c = cin.get(); return t_sub;
+        case '*': c = cin.get(); return t_mul;
+        case '/': c = cin.get(); return t_div;
+        case '(': c = cin.get(); return t_lparen;
+        case ')': c = cin.get(); return t_rparen;
         case '=':
-            if ((c = getchar()) != '=') {
+            c = cin.get();
+            if (c != '=') {
                 cerr << "error" << endl;
                 exit(1);
             } else {
-                c = getchar();
+                c = cin.get();
                 return t_eq;
             }
         case '<':
-            c = getchar();
+            c = cin.get();
             if (c == '>') {
-                c = getchar();
+                c = cin.get();
                 return t_noteq;
             }
             else if (c == '=') {
-                c = getchar();
+                c = cin.get();
                 return t_lte;
             }
             else if (c == ' ') {
-                c = getchar();
+                c = cin.get();
                 return t_lt;
             }
             else {
@@ -90,13 +91,13 @@ token scan() {
                 exit(1);
             }
         case '>':
-            c = getchar();
+            c = cin.get();
             if (c == '=') {
-                c = getchar();
+                c = cin.get();
                 return t_gte;
             }
             else if (c == ' ') {
-                c = getchar();
+                c = cin.get();
                 return t_gt;
             }
             else {
