@@ -5,3 +5,4 @@ output**.txt
 CMakeLists.txt
 cmake-build-debug/
 *.dSYM/
+a.out
