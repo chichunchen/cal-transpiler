@@ -18,15 +18,11 @@ using namespace std;
 /*
  * ast structs
  */
-typedef struct _node {
+typedef struct _bin_op {
     token type;
     char name[100];
-} node;
-
-typedef struct _bin_op {
-    token op;
-    node* l_child;
-    node* r_child;
+    struct _bin_op* l_child;
+    struct _bin_op* r_child;
 } bin_op;
 
 /*
@@ -62,7 +58,7 @@ void match (token expected, bool print) {
 void program ();
 void stmt_list ();
 void stmt ();
-void relation ();
+bin_op* relation ();
 void expr (bin_op*);
 void expr_tail(bin_op*);
 void term (bin_op*);
@@ -178,71 +174,73 @@ void stmt () {
     }
 }
 
-void relation() {
+// init with null binary_op and return filled binary_op
+bin_op* relation() {
     bin_op* binary_op = (bin_op*) malloc(sizeof(bin_op));
-    binary_op->op = t_none;
+    binary_op->type = t_none;
     binary_op->l_child = NULL;
-    binary_op->l_child = NULL;
+    binary_op->r_child = NULL;
 
     switch (input_token) {
         case t_id:
         case t_literal:
         case t_lparen:
             PREDICT("predict relation --> expr expr_tail" << endl);
-            expr(binary_op);
+            expr (binary_op);
             expr_tail (binary_op);
 
-            if (binary_op->op != t_none) {
-                AST("(" << names[binary_op->op] << " ");
-                if (binary_op->l_child != NULL) {
-                    if (binary_op->l_child->type == t_id) {
-                        AST("(id \"");
-                        AST(binary_op->l_child->name);
-                        AST("\") ");
-                    }
-                    else if (binary_op->l_child->type == t_literal) {
-                        AST("(num \"");
-                        AST(binary_op->l_child->name);
-                        AST("\")");
-                    }
-                }
-                if (binary_op->r_child != NULL) {
-                    if (binary_op->r_child->type == t_id) {
-                        AST("(id \"");
-                        AST(binary_op->r_child->name);
-                        AST("\")");
-                    }
-                    else if (binary_op->r_child->type == t_literal) {
-                        AST(" (num \"");
-                        AST(binary_op->r_child->name);
-                        AST("\")");
-                    }
-                }
-                AST(")");
-            } else {
-                if (binary_op->l_child != NULL) {
-                    if (binary_op->l_child->type == t_id) {
-                        AST("(id \"");
-                        AST(binary_op->l_child->name);
-                        AST("\")");
-                    }
-                    else if (binary_op->l_child->type == t_literal) {
-                        AST("(num \"");
-                        AST(binary_op->l_child->name);
-                        AST("\")");
-                    }
-                }
-            }
-
-            if (!binary_op->l_child)
-                free(binary_op->l_child);
-            if (!binary_op->r_child)
-                free(binary_op->r_child);
-            free(binary_op);
+//             if (binary_op->op != t_none) {
+//                 AST("(" << names[binary_op->op] << " ");
+//                 if (binary_op->l_child != NULL) {
+//                     if (binary_op->l_child->type == t_id) {
+//                         AST("(id \"");
+//                         AST(binary_op->l_child->name);
+//                         AST("\") ");
+//                     }
+//                     else if (binary_op->l_child->type == t_literal) {
+//                         AST("(num \"");
+//                         AST(binary_op->l_child->name);
+//                         AST("\")");
+//                     }
+//                 }
+//                 if (binary_op->r_child != NULL) {
+//                     if (binary_op->r_child->type == t_id) {
+//                         AST("(id \"");
+//                         AST(binary_op->r_child->name);
+//                         AST("\")");
+//                     }
+//                     else if (binary_op->r_child->type == t_literal) {
+//                         AST(" (num \"");
+//                         AST(binary_op->r_child->name);
+//                         AST("\")");
+//                     }
+//                 }
+//                 AST(")");
+//             } else {
+//                 if (binary_op->l_child != NULL) {
+//                     if (binary_op->l_child->type == t_id) {
+//                         AST("(id \"");
+//                         AST(binary_op->l_child->name);
+//                         AST("\")");
+//                     }
+//                     else if (binary_op->l_child->type == t_literal) {
+//                         AST("(num \"");
+//                         AST(binary_op->l_child->name);
+//                         AST("\")");
+//                     }
+//                 }
+//             }
+// 
+//             if (!binary_op->l_child)
+//                 free(binary_op->l_child);
+//             if (!binary_op->r_child)
+//                 free(binary_op->r_child);
+//             free(binary_op);
 
             break;
         default: error ();
     }
+    return binary_op;
 }
 
 void expr (bin_op* binary_op) {
@@ -369,15 +367,17 @@ void factor_tail (bin_op* binary_op) {
 }
 
 void factor (bin_op* binary_op) {
-    node* child;
+    bin_op* child;
 
     switch (input_token) {
         case t_id :
             PREDICT("predict factor --> id" << endl);
 
-            child = (node *) malloc(sizeof(node));
+            child = (bin_op *) malloc(sizeof(bin_op));
             child->type = t_id;
             strcpy(child->name, token_image);
+            child->l_child = NULL;
+            child->r_child = NULL;
 
             match (t_id, false);
 
@@ -391,9 +391,11 @@ void factor (bin_op* binary_op) {
         case t_literal:
             PREDICT("predict factor --> literal" << endl);
 
-            child = (node *) malloc(sizeof(node));
-            child->type = t_literal;
+            child = (bin_op *) malloc(sizeof(bin_op));
+            child->type = t_id;
             strcpy(child->name, token_image);
+            child->l_child = NULL;
+            child->r_child = NULL;
 
             match (t_literal, false);
 
@@ -406,7 +408,9 @@ void factor (bin_op* binary_op) {
         case t_lparen:
             PREDICT("predict factor --> lparen expr rparen" << endl);
             match (t_lparen, false);
-            relation ();
+
+            child = relation ();
+
             match (t_rparen, false);
             break;
         default: error ();
@@ -418,32 +422,32 @@ void relation_op(bin_op* binary_op) {
         case t_eq:
             PREDICT("predict relation_op --> ==" << endl);
             match (t_eq, false);
-            binary_op->op = t_eq;
+            binary_op->type = t_eq;
             break;
         case t_noteq:
             PREDICT("predict relation_op --> <>" << endl);
             match (t_noteq, false);
-            binary_op->op = t_noteq;
+            binary_op->type = t_noteq;
             break;
         case t_lt:
             PREDICT("predict relation_op --> <" << endl);
             match (t_lt, false);
-            binary_op->op = t_lt;
+            binary_op->type = t_lt;
             break;
         case t_gt:
             PREDICT("predict relation_op --> >" << endl);
             match (t_gt, false);
-            binary_op->op = t_gt;
+            binary_op->type = t_gt;
             break;
         case t_lte:
             PREDICT("predict relation_op --> <=" << endl);
             match (t_lte, false);
-            binary_op->op = t_lte;
+            binary_op->type = t_lte;
             break;
         case t_gte:
             PREDICT("predict relation_op --> >=" << endl);
             match (t_gte, false);
-            binary_op->op = t_gte;
+            binary_op->type = t_gte;
             break;
         default: error ();
     }
@@ -456,12 +460,12 @@ void add_op (bin_op* binary_op) {
         case t_add:
             PREDICT("predict add_op --> add" << endl);
             match (t_add, false);
-            binary_op->op = t_add;
+            binary_op->type = t_add;
             break;
         case t_sub:
             PREDICT("predict add_op --> sub" << endl);
             match (t_sub, false);
-            binary_op->op = t_sub;
+            binary_op->type = t_sub;
             break;
         default: error ();
     }
@@ -472,12 +476,12 @@ void mul_op (bin_op* binary_op) {
         case t_mul:
             PREDICT("predict mul_op --> mul" << endl);
             match (t_mul, false);
-            binary_op->op = t_mul;
+            binary_op->type = t_mul;
             break;
         case t_div:
             PREDICT("predict mul_op --> div" << endl);
             match (t_div, false);
-            binary_op->op = t_div;
+            binary_op->type = t_div;
             break;
         default: error ();
     }
