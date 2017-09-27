@@ -86,7 +86,10 @@ void program () {
             AST("[ ");
             stmt_list ();
             AST("]");
+
+            // if not t_eof, delete until eof
             match (t_eof, false);
+
             break;
         default: error ();
     }
@@ -130,48 +133,70 @@ void stmt () {
             AST("\"");
             match (t_id, true);
             AST("\"");
+
+            // if not :=, then insert an :=
             match (t_gets, false);
-            // the bracket only show while there is more than one child
+
             print_relation(relation ());
+
             break;
         case t_read:
             PREDICT("predict stmt --> read id" << endl);
             match (t_read, false);
             AST("read ");
             AST("\"");
+
+            // if not id, delete token until id
             match (t_id, true);
+
             AST("\"");
             break;
         case t_write:
             PREDICT("predict stmt --> write relation" << endl);
             match (t_write, false);
             AST("write");
+
+            // pass write
             print_relation(relation ());
+
             break;
         case t_if:
             PREDICT("predict stmt --> if R SL fi" << endl);
             match (t_if, false);
             AST("if\n");
+
+            // pass follow(stmt_list)
             print_relation(relation ());
+
             AST(endl << "[ ");
             stmt_list ();
             AST("]" << endl);
+
+            // insert or delete token til token == t_fi
             match (t_fi, false);
+
             break;
         case t_do:
             PREDICT("predict stmt --> do SL od" << endl);
             match (t_do, false);
             AST("do\n");
+
             AST("[ ");
             stmt_list ();
             AST("]" << endl);
+
+            // insert or delete token til token == t_od
             match (t_od, false);
+
             break;
         case t_check:
             PREDICT("predict stmt --> check R" << endl);
             match (t_check, false);
             AST("check");
+
+            // pass follow(r)
             print_relation(relation ());
+
             break;
         default: error ();
     }
@@ -214,6 +239,7 @@ void print_relation(bin_op* root) {
 }
 
 // init with null binary_op and return filled binary_op
+// get a context argument
 bin_op* relation() {
     bin_op* binary_op = (bin_op*) malloc(sizeof(bin_op));
     binary_op->type = t_none;
@@ -225,8 +251,14 @@ bin_op* relation() {
         case t_literal:
         case t_lparen:
             PREDICT("predict relation --> expr expr_tail" << endl);
-            expr (binary_op);
+
+            // catch
+            // pass follow (expr) in context-specific
+            expr(binary_op);
+
+            // pass follow(R) in context-specific
             expr_tail (binary_op);
+
             break;
         default: error ();
     }
@@ -239,6 +271,7 @@ void expr (bin_op* binary_op) {
         case t_literal:
         case t_lparen:
             PREDICT("predict expr --> term term_tail" << endl);
+
             term (binary_op);
             term_tail (binary_op);
             break;
@@ -258,6 +291,7 @@ void expr_tail(bin_op* binary_op) {
             expr(binary_op);
             break;
         /* Follow(E) */
+        // receive context-specific from caller, and only predict epsilon in the given set
         case t_eof:
         case t_id:
         case t_read:
@@ -289,6 +323,7 @@ void term (bin_op* binary_op) {
     }
 }
 
+// get context-specific sets from caller
 void term_tail (bin_op* binary_op) {
     switch (input_token) {
         case t_add:
@@ -298,6 +333,7 @@ void term_tail (bin_op* binary_op) {
             term (binary_op);
             term_tail (binary_op);
             break;
+        // Follow(E), receive context-specific from caller, and only predict epsilon in the given set
         case t_rparen:
         case t_id:
         case t_read:
@@ -320,6 +356,7 @@ void term_tail (bin_op* binary_op) {
     }
 }
 
+// get context-specific sets from caller
 void factor_tail (bin_op* binary_op) {
     switch (input_token) {
         case t_mul:
@@ -330,6 +367,7 @@ void factor_tail (bin_op* binary_op) {
             factor_tail (binary_op);
             break;
         /* Follow(factor_tail) */
+        // receive context-specific from caller, and only predict epsilon in the given set
         case t_add:
         case t_sub:
         case t_rparen:
@@ -405,7 +443,11 @@ void factor (bin_op* binary_op) {
             else
                 binary_op->r_child = child;
 
+            // pass ), Follow(R) as context specific
+            relation ();
+
             match (t_rparen, false);
+
             break;
         default: error ();
     }
