@@ -70,6 +70,7 @@ void add_op (bin_op*);
 void mul_op (bin_op*);
 
 void print_relation(bin_op* root);
+void free_bin_op(bin_op* root);
 
 void program () {
     AST("(program" << endl);
@@ -137,7 +138,9 @@ void stmt () {
             // if not :=, then insert an :=
             match (t_gets, false);
 
-            print_relation(relation ());
+            root = relation();
+            print_relation(root);
+            free_bin_op(root);
 
             break;
         case t_read:
@@ -157,7 +160,9 @@ void stmt () {
             AST("write");
 
             // pass write
-            print_relation(relation ());
+            root = relation();
+            print_relation(root);
+            free_bin_op(root);
 
             break;
         case t_if:
@@ -166,7 +171,9 @@ void stmt () {
             AST("if\n");
 
             // pass follow(stmt_list)
-            print_relation(relation ());
+            root = relation();
+            print_relation(root);
+            free_bin_op(root);
 
             AST(endl << "[ ");
             stmt_list ();
@@ -195,7 +202,9 @@ void stmt () {
             AST("check");
 
             // pass follow(r)
-            print_relation(relation ());
+            root = relation();
+            print_relation(root);
+            free_bin_op(root);
 
             break;
         default: error ();
@@ -236,6 +245,14 @@ void print_relation(bin_op* root) {
 
     if (root->l_child != NULL && root->r_child != NULL)
         AST(")");
+}
+
+void free_bin_op(bin_op* root) {
+    if (root->l_child)
+        free_bin_op(root->l_child);
+    if (root->r_child)
+        free_bin_op(root->r_child);
+    free(root);
 }
 
 // init with null binary_op and return filled binary_op
