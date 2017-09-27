@@ -70,6 +70,7 @@ void add_op (bin_op*);
 void mul_op (bin_op*);
 
 void print_relation(bin_op* root);
+void free_bin_op(bin_op* root);
 
 void program () {
     AST("(program" << endl);
@@ -131,8 +132,12 @@ void stmt () {
             match (t_id, true);
             AST("\"");
             match (t_gets, false);
+
             // the bracket only show while there is more than one child
-            print_relation(relation ());
+            root = relation();
+            print_relation(root);
+            free_bin_op(root);
+
             break;
         case t_read:
             PREDICT("predict stmt --> read id" << endl);
@@ -146,13 +151,23 @@ void stmt () {
             PREDICT("predict stmt --> write relation" << endl);
             match (t_write, false);
             AST("write");
-            print_relation(relation ());
+
+            // pass write
+            root = relation();
+            print_relation(root);
+            free_bin_op(root);
+
             break;
         case t_if:
             PREDICT("predict stmt --> if R SL fi" << endl);
             match (t_if, false);
             AST("if\n");
-            print_relation(relation ());
+
+            // pass follow(stmt_list)
+            root = relation();
+            print_relation(root);
+            free_bin_op(root);
+
             AST(endl << "[ ");
             stmt_list ();
             AST("]" << endl);
@@ -171,7 +186,12 @@ void stmt () {
             PREDICT("predict stmt --> check R" << endl);
             match (t_check, false);
             AST("check");
-            print_relation(relation ());
+
+            // pass follow(r)
+            root = relation();
+            print_relation(root);
+            free_bin_op(root);
+
             break;
         default: error ();
     }
@@ -211,6 +231,14 @@ void print_relation(bin_op* root) {
 
     if (root->l_child != NULL && root->r_child != NULL)
         AST(")");
+}
+
+void free_bin_op(bin_op* root) {
+    if (root->l_child)
+        free_bin_op(root->l_child);
+    if (root->r_child)
+        free_bin_op(root->r_child);
+    free(root);
 }
 
 // init with null binary_op and return filled binary_op
