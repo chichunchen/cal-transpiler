@@ -80,7 +80,7 @@ struct ExpressionException : public exception {
 const char* names[] = {"read", "write", "id", "literal", "gets",
                        "add", "sub", "mul", "div", "lparen", "rparen", "eof",
                        "if", "fi", "do", "od", "check",
-                       "eq", "noteq", "lt", "gt", "lte", "gte" };
+                       "eq", "noteq", "lt", "gt", "lte", "gte" , "none"};
 
 static token input_token;
 
@@ -91,7 +91,7 @@ void error () {
 
 // 1. match token
 // 2. if it's id or literal, print it
-void match (token expected, bool print, Context context) {
+void match (token expected, bool print) {
     if (input_token == expected) {
         PREDICT("matched " << names[input_token]);
         if (input_token == t_id || input_token == t_literal) {
@@ -102,18 +102,9 @@ void match (token expected, bool print, Context context) {
         input_token = scan ();
     }
     else {
-        if (context == c_stmt) {
-            throw StatementException();
-        }
-        else if (context == c_rel) {
-            throw RelationException();
-        }
-        else if (context == c_expr || context == c_factor || context == c_ro || context == c_ao || context == c_mo) {
-            throw ExpressionException();
-        }
-        else {  // currently program, stmt_list
-            return;
-        }
+        cerr << endl;
+        cerr << "line: " << lineno << ", expect: " << names[expected] << " , get " << names[input_token] << endl;
+        return;
     }
 }
 
@@ -148,7 +139,7 @@ void program () {
             AST("[ ");
             stmt_list ();
             AST("]");
-            match (t_eof, false, c_none);
+            match (t_eof, false);
             break;
         default: error ();
     }
@@ -191,48 +182,48 @@ void stmt () {
                 PREDICT("predict stmt --> id gets expr" << endl);
                 AST(":= ");
                 AST("\"");
-                match (t_id, true, c_stmt);
+                match (t_id, true);
                 AST("\"");
-                match (t_gets, false, c_stmt);
+                match (t_gets, false);
                 // the bracket only show while there is more than one child
                 print_relation(relation ());
                 break;
             case t_read:
                 PREDICT("predict stmt --> read id" << endl);
-                match (t_read, false, c_stmt);
+                match (t_read, false);
                 AST("read ");
                 AST("\"");
-                match (t_id, true, c_stmt);
+                match (t_id, true);
                 AST("\"");
                 break;
             case t_write:
                 PREDICT("predict stmt --> write relation" << endl);
-                match (t_write, false, c_stmt);
+                match (t_write, false);
                 AST("write");
                 print_relation(relation ());
                 break;
             case t_if:
                 PREDICT("predict stmt --> if R SL fi" << endl);
-                match (t_if, false, c_stmt);
+                match (t_if, false);
                 AST("if\n");
                 print_relation(relation ());
                 AST(endl << "[ ");
                 stmt_list ();
                 AST("]" << endl);
-                match (t_fi, false, c_stmt);
+                match (t_fi, false);
                 break;
             case t_do:
                 PREDICT("predict stmt --> do SL od" << endl);
-                match (t_do, false, c_stmt);
+                match (t_do, false);
                 AST("do\n");
                 AST("[ ");
                 stmt_list ();
                 AST("]" << endl);
-                match (t_od, false, c_stmt);
+                match (t_od, false);
                 break;
             case t_check:
                 PREDICT("predict stmt --> check R" << endl);
-                match (t_check, false, c_stmt);
+                match (t_check, false);
                 AST("check");
                 print_relation(relation ());
                 break;
@@ -362,6 +353,7 @@ void expr (bin_op* binary_op) {
         cerr << ee.what() << ": error in line number: " << lineno << endl;
 
         while ((input_token = scan())) {
+
             // recover
             if (find(first_E.begin(), first_E.end(), input_token) != first_E.end()) {
                 cerr << "first: in lineno: " << lineno << ", token: " << names[input_token] << endl;
@@ -519,7 +511,7 @@ void factor (bin_op* binary_op) {
             child->l_child = NULL;
             child->r_child = NULL;
 
-            match (t_id, false, c_factor);
+            match (t_id, false);
 
             add_chile_to_null_node(binary_op, child);
 
@@ -533,21 +525,21 @@ void factor (bin_op* binary_op) {
             child->l_child = NULL;
             child->r_child = NULL;
 
-            match (t_literal, false, c_factor);
+            match (t_literal, false);
 
             add_chile_to_null_node(binary_op, child);
 
             break;
         case t_lparen:
             PREDICT("predict factor --> lparen expr rparen" << endl);
-            match (t_lparen, false, c_factor);
+            match (t_lparen, false);
 
             child = relation ();
 
             // find null child
             add_chile_to_null_node(binary_op, child);
 
-            match (t_rparen, false, c_factor);
+            match (t_rparen, false);
             break;
         default:
             throw ExpressionException();
@@ -557,13 +549,19 @@ void factor (bin_op* binary_op) {
 // if bin_op's type is not t_none
 // create a new node and swap it with the right node
 void AddOrCreateSwapNode(bin_op* binary_op, token tok) {
+
+    const char* print_names[] = {"read", "write", "id", "literal", "gets",
+                           "+", "-", "*", "/", "lparen", "rparen", "eof",
+                           "if", "fi", "do", "od", "check",
+                           "==", "<>", "<", ">", "<=", ">=", "none"};
+
     if (binary_op->type == t_none) {
         binary_op->type = tok;
-        strcpy(binary_op->name, names[tok]);
+        strcpy(binary_op->name, print_names[tok]);
     } else {
         bin_op* new_node = (bin_op*) malloc(sizeof(bin_op));
         new_node->type = tok;
-        strcpy(new_node->name, names[tok]);
+        strcpy(new_node->name, print_names[tok]);
         new_node->l_child = binary_op->r_child;
         binary_op->r_child = new_node;
     }
@@ -573,42 +571,42 @@ void relation_op(bin_op* binary_op) {
     switch (input_token) {
         case t_eq:
             PREDICT("predict relation_op --> ==" << endl);
-            match (t_eq, false, c_ro);
+            match (t_eq, false);
 
             AddOrCreateSwapNode(binary_op, t_eq);
 
             break;
         case t_noteq:
             PREDICT("predict relation_op --> <>" << endl);
-            match (t_noteq, false, c_ro);
+            match (t_noteq, false);
 
             AddOrCreateSwapNode(binary_op, t_noteq);
 
             break;
         case t_lt:
             PREDICT("predict relation_op --> <" << endl);
-            match (t_lt, false, c_ro);
+            match (t_lt, false);
 
             AddOrCreateSwapNode(binary_op, t_lt);
 
             break;
         case t_gt:
             PREDICT("predict relation_op --> >" << endl);
-            match (t_gt, false, c_ro);
+            match (t_gt, false);
 
             AddOrCreateSwapNode(binary_op, t_gt);
 
             break;
         case t_lte:
             PREDICT("predict relation_op --> <=" << endl);
-            match (t_lte, false, c_ro);
+            match (t_lte, false);
 
             AddOrCreateSwapNode(binary_op, t_lte);
 
             break;
         case t_gte:
             PREDICT("predict relation_op --> >=" << endl);
-            match (t_gte, false, c_ro);
+            match (t_gte, false);
 
             AddOrCreateSwapNode(binary_op, t_gte);
 
@@ -622,14 +620,14 @@ void add_op (bin_op* binary_op) {
     switch (input_token) {
         case t_add:
             PREDICT("predict add_op --> add" << endl);
-            match (t_add, false, c_ao);
+            match (t_add, false);
 
             AddOrCreateSwapNode(binary_op, t_add);
 
             break;
         case t_sub:
             PREDICT("predict add_op --> sub" << endl);
-            match (t_sub, false, c_ao);
+            match (t_sub, false);
 
             AddOrCreateSwapNode(binary_op, t_sub);
 
@@ -643,14 +641,14 @@ void mul_op (bin_op* binary_op) {
     switch (input_token) {
         case t_mul:
             PREDICT("predict mul_op --> mul" << endl);
-            match (t_mul, false, c_mo);
+            match (t_mul, false);
 
             AddOrCreateSwapNode(binary_op, t_mul);
 
             break;
         case t_div:
             PREDICT("predict mul_op --> div" << endl);
-            match (t_div, false, c_mo);
+            match (t_div, false);
 
             AddOrCreateSwapNode(binary_op, t_div);
 

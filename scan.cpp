@@ -63,8 +63,9 @@ token scan() {
         switch (c) {
             case ':':
                 if ((c = lineno_get()) != '=') {
-                    cerr << "error" << endl;
-                    exit(1);
+                    cerr << endl;
+                    cerr << "line: " << lineno << ", expect: := , get: :" << char(c) << endl;
+                    return t_none;
                 } else {
                     c = lineno_get();
                     return t_gets;
@@ -90,8 +91,9 @@ token scan() {
                 return t_rparen;
             case '=':
                 if ((c = lineno_get()) != '=') {
-                    cerr << "error" << endl;
-                    exit(1);
+                    cerr << endl;
+                    cerr << "line: " << lineno << ", expect: == , get: =" << char(c) << endl;
+                    return t_none;
                 } else {
                     c = lineno_get();
                     return t_eq;
@@ -108,8 +110,9 @@ token scan() {
                     c = lineno_get();
                     return t_lt;
                 } else {
-                    cerr << "error" << endl;
-                    exit(1);
+                    cerr << endl;
+                    cerr << "line: " << lineno << ", expect: <= or <> , get: <" << char(c) << endl;
+                    return t_none;
                 }
             case '>':
                 c = lineno_get();
@@ -120,12 +123,14 @@ token scan() {
                     c = lineno_get();
                     return t_gt;
                 } else {
-                    cerr << "error" << endl;
-                    exit(1);
+                    cerr << endl;
+                    cerr << "line: " << lineno << ", expect: >= , get: >" << char(c) << endl;
+                    return t_none;
                 }
             default:
-                cout << "error" << endl;
-                exit(1);
+                cerr << endl;
+                cerr << "line: " << lineno << ", get: " << char(c) << endl;
+                return t_none;
         }
     }
 }
