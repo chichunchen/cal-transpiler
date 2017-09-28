@@ -494,6 +494,18 @@ void factor_tail (bin_op* binary_op) {
     }
 }
 
+void add_chile_to_null_node(bin_op* root, bin_op *child) {
+    if (root->l_child == NULL) {
+        root->l_child = child;
+    }
+    else if (root->r_child == NULL) {
+        root->r_child = child;
+    }
+    else {
+        add_chile_to_null_node(root->r_child, child);
+    }
+}
+
 void factor (bin_op* binary_op) {
     bin_op* child;
 
@@ -509,11 +521,7 @@ void factor (bin_op* binary_op) {
 
             match (t_id, false, c_factor);
 
-            if (binary_op->l_child == NULL)
-                binary_op->l_child = child;
-            else {
-                binary_op->r_child = child;
-            }
+            add_chile_to_null_node(binary_op, child);
 
             break;
         case t_literal:
@@ -527,10 +535,7 @@ void factor (bin_op* binary_op) {
 
             match (t_literal, false, c_factor);
 
-            if (binary_op->l_child == NULL)
-                binary_op->l_child = child;
-            else
-                binary_op->r_child = child;
+            add_chile_to_null_node(binary_op, child);
 
             break;
         case t_lparen:
@@ -538,10 +543,9 @@ void factor (bin_op* binary_op) {
             match (t_lparen, false, c_factor);
 
             child = relation ();
-            if (binary_op->l_child == NULL)
-                binary_op->l_child = child;
-            else
-                binary_op->r_child = child;
+
+            // find null child
+            add_chile_to_null_node(binary_op, child);
 
             match (t_rparen, false, c_factor);
             break;
@@ -550,43 +554,64 @@ void factor (bin_op* binary_op) {
     }
 }
 
+// if bin_op's type is not t_none
+// create a new node and swap it with the right node
+void AddOrCreateSwapNode(bin_op* binary_op, token tok) {
+    if (binary_op->type == t_none) {
+        binary_op->type = tok;
+        strcpy(binary_op->name, names[tok]);
+    } else {
+        bin_op* new_node = (bin_op*) malloc(sizeof(bin_op));
+        new_node->type = tok;
+        strcpy(new_node->name, names[tok]);
+        new_node->l_child = binary_op->r_child;
+        binary_op->r_child = new_node;
+    }
+}
+
 void relation_op(bin_op* binary_op) {
     switch (input_token) {
         case t_eq:
             PREDICT("predict relation_op --> ==" << endl);
             match (t_eq, false, c_ro);
-            binary_op->type = t_eq;
-            strcpy(binary_op->name, "==");
+
+            AddOrCreateSwapNode(binary_op, t_eq);
+
             break;
         case t_noteq:
             PREDICT("predict relation_op --> <>" << endl);
             match (t_noteq, false, c_ro);
-            binary_op->type = t_noteq;
-            strcpy(binary_op->name, ",.");
+
+            AddOrCreateSwapNode(binary_op, t_noteq);
+
             break;
         case t_lt:
             PREDICT("predict relation_op --> <" << endl);
             match (t_lt, false, c_ro);
-            binary_op->type = t_lt;
-            strcpy(binary_op->name, "<");
+
+            AddOrCreateSwapNode(binary_op, t_lt);
+
             break;
         case t_gt:
             PREDICT("predict relation_op --> >" << endl);
             match (t_gt, false, c_ro);
-            binary_op->type = t_gt;
-            strcpy(binary_op->name, ">");
+
+            AddOrCreateSwapNode(binary_op, t_gt);
+
             break;
         case t_lte:
             PREDICT("predict relation_op --> <=" << endl);
             match (t_lte, false, c_ro);
-            binary_op->type = t_lte;
-            strcpy(binary_op->name, "<=");
+
+            AddOrCreateSwapNode(binary_op, t_lte);
+
             break;
         case t_gte:
             PREDICT("predict relation_op --> >=" << endl);
             match (t_gte, false, c_ro);
-            binary_op->type = t_gte;
-            strcpy(binary_op->name, ">=");
+
+            AddOrCreateSwapNode(binary_op, t_gte);
+
             break;
         default:
             throw ExpressionException();
@@ -598,14 +623,16 @@ void add_op (bin_op* binary_op) {
         case t_add:
             PREDICT("predict add_op --> add" << endl);
             match (t_add, false, c_ao);
-            binary_op->type = t_add;
-            strcpy(binary_op->name, "+");
+
+            AddOrCreateSwapNode(binary_op, t_add);
+
             break;
         case t_sub:
             PREDICT("predict add_op --> sub" << endl);
             match (t_sub, false, c_ao);
-            binary_op->type = t_sub;
-            strcpy(binary_op->name, "-");
+
+            AddOrCreateSwapNode(binary_op, t_sub);
+
             break;
         default:
             throw ExpressionException();
@@ -617,14 +644,16 @@ void mul_op (bin_op* binary_op) {
         case t_mul:
             PREDICT("predict mul_op --> mul" << endl);
             match (t_mul, false, c_mo);
-            binary_op->type = t_mul;
-            strcpy(binary_op->name, "*");
+
+            AddOrCreateSwapNode(binary_op, t_mul);
+
             break;
         case t_div:
             PREDICT("predict mul_op --> div" << endl);
             match (t_div, false, c_mo);
-            binary_op->type = t_div;
-            strcpy(binary_op->name, "/");
+
+            AddOrCreateSwapNode(binary_op, t_div);
+
             break;
         default:
             throw ExpressionException();

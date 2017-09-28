@@ -32,6 +32,15 @@ first: in lineno: 1, token: a
 ]
 )
 ```
+- test09
+```
+(program                                                                                 
+[ (read "a")                                                                             
+(write  (add (id "a")  (mul (num "4") (num "5"))))                                      
+(write (num "3"))                                                                     
+]                                                                   
+)
+```
 
 ### TODO
 - [X] Translate the code to c++ (no error in g++)
