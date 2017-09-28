@@ -1,3 +1,1 @@
-s := > n
-cp := 2 * * 3
-read a
+a := (x  x < yy)
