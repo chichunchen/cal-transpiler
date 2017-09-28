@@ -15,11 +15,10 @@ using namespace std;
 char token_image[100];
 
 int lineno = 1;
-token look_ahead = t_none;
 
 char lineno_get() {
     char c = cin.get();
-    if (cin.eof()) {
+    if (c == '\n') {
         lineno++;
 //        DEBUG(endl << "add line" << endl);
     }
@@ -27,12 +26,6 @@ char lineno_get() {
 }
 
 token scan() {
-    if (look_ahead != t_none) {
-        token temp = look_ahead;
-        look_ahead = t_none;
-        return temp;
-    }
-
     static int c = ' ';
     /* next available char; extra (int) width accommodates EOF */
     int i = 0;              /* index into token_image */
@@ -41,7 +34,7 @@ token scan() {
     while (isspace(c)) {
         c = lineno_get();
     }
-    if (c == EOF)
+    if (cin.eof())
         return t_eof;
     if (isalpha(c)) {
         do {
@@ -135,9 +128,4 @@ token scan() {
                 exit(1);
         }
     }
-}
-
-token get_next_token () {
-    look_ahead = scan();
-    return look_ahead;
 }

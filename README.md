@@ -1,8 +1,41 @@
 # A2
 
+### Error Detector
+- test06
+```
+read a read b read c write ( a * ( b + c
+(program
+[ (read "a")
+(read "b")
+(read "c")
+(writeExpression Exception: error in line number: 1
+discard token: eof, error in lineno: 1
+Expression Exception: error in line number: 1
+discard token: eof, error in lineno: 1
+  (* (id "a")  (+ (id "b") (id "c"))))
+]
+)
+```
+- test07
+```
+Y := (A * X write A * B
+(*  (* (id "A") (id "X")) (id "B")))
+```
+- test08
+```
+(program
+[ (read "a")
+(read "b")
+(:= "Y"Relation Exception , line number: 1
+first: in lineno: 1, token: a
+ (* (id "a") (id "b")))
+]
+)
+```
+
 ### TODO
 - [X] Translate the code to c++ (no error in g++)
-    - [ ] Translate to c++ style
+    - [X] Translate to c++ style
 - [ ] Write test cases with Makefile
     - [ ] testXX.txt as the code of calculator language
     - [ ] outputXX.txt as the output AST for the correspondent testXX.txt

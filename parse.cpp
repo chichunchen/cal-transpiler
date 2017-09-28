@@ -102,14 +102,16 @@ void match (token expected, bool print, Context context) {
         input_token = scan ();
     }
     else {
-//        error ();
         if (context == c_stmt) {
             throw StatementException();
         }
-        else if (context == c_expr) {
+        else if (context == c_rel) {
+            throw RelationException();
+        }
+        else if (context == c_expr || context == c_factor || context == c_ro || context == c_ao || context == c_mo) {
             throw ExpressionException();
         }
-        else {  // program, stmt_list
+        else {  // currently program, stmt_list
             return;
         }
     }
@@ -255,6 +257,9 @@ void stmt () {
             } else {
                 cerr << "discard token: " << token_image << ", error in lineno: " << lineno << endl;
                 input_token = scan();
+
+                if (input_token == t_eof)
+                    return;
             }
         }
     }
@@ -313,7 +318,6 @@ bin_op* relation() {
                 expr_tail (binary_op);
                 break;
             default:
-//            error ();
                 throw RelationException();
         }
     } catch (RelationException &re) {
@@ -324,15 +328,16 @@ bin_op* relation() {
             if (find(first_R.begin(), first_R.end(), input_token) != first_R.end()) {
                 cerr << "first: in lineno: " << lineno << ", token: " << token_image << endl;
                 expr(binary_op);
-//                input_token = scan();
                 return binary_op;
             } else if (find(follow_R.begin(), follow_R.end(), input_token) != follow_R.end()) {
                 cerr << "follow:  in lineno: " << lineno << ", token: " << token_image << endl;
-//                input_token = scan();
                 return binary_op;
             } else {
                 cerr << "discard token: " << token_image << ", error in lineno: " << lineno << endl;
                 input_token = scan();
+
+                if (input_token == t_eof)
+                    return binary_op;
             }
         }
     }
@@ -361,15 +366,16 @@ void expr (bin_op* binary_op) {
             if (find(first_E.begin(), first_E.end(), input_token) != first_E.end()) {
                 cerr << "first: in lineno: " << lineno << ", token: " << names[input_token] << endl;
                 expr(binary_op);
-//                input_token = scan();
                 return;
             } else if (find(follow_E.begin(), follow_E.end(), input_token) != follow_E.end()) {
                 cerr << "follow:  in lineno: " << lineno << ", token: " << names[input_token] << endl;
-//                input_token = scan();
                 return;
             } else {
                 cerr << "discard token: " << names[input_token] << ", error in lineno: " << lineno << endl;
                 input_token = scan();
+
+                if (input_token == t_eof)
+                    return;
             }
         }
     }
@@ -416,7 +422,6 @@ void term (bin_op* binary_op) {
             factor_tail (binary_op);
             break;
         default:
-//            error ();
             throw ExpressionException();
     }
 }
@@ -449,7 +454,6 @@ void term_tail (bin_op* binary_op) {
             PREDICT("predict term_tail --> epsilon" << endl);
             break;          /*  epsilon production */
         default:
-//            error ();
             throw ExpressionException();
     }
 }
@@ -486,7 +490,6 @@ void factor_tail (bin_op* binary_op) {
             break;          /*  epsilon production */
         default:
 //            cerr << "error: " << input_token << endl;
-//            error ();
             throw ExpressionException();
     }
 }
@@ -543,7 +546,6 @@ void factor (bin_op* binary_op) {
             match (t_rparen, false, c_factor);
             break;
         default:
-//            error ();
             throw ExpressionException();
     }
 }
@@ -587,11 +589,8 @@ void relation_op(bin_op* binary_op) {
             strcpy(binary_op->name, ">=");
             break;
         default:
-//            error ();
             throw ExpressionException();
     }
-
-    //cout << endl << "test: " << binary_op->op << endl;
 }
 
 void add_op (bin_op* binary_op) {
@@ -609,7 +608,6 @@ void add_op (bin_op* binary_op) {
             strcpy(binary_op->name, "-");
             break;
         default:
-//            error ();
             throw ExpressionException();
     }
 }
@@ -629,7 +627,6 @@ void mul_op (bin_op* binary_op) {
             strcpy(binary_op->name, "/");
             break;
         default:
-//            error ();
             throw ExpressionException();
     }
 }
