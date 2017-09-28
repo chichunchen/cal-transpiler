@@ -239,21 +239,21 @@ void stmt () {
                 throw StatementException();
         }
     } catch (StatementException se) {
-        cerr << se.what() << " , line number: " << lineno << endl;
+        cerr << se.what() << " " << token_image << " , line number: " << lineno << endl;
 
         while ((input_token = scan())) {
             // recover
             if (find(first_S.begin(), first_S.end(), input_token) != first_S.end()) {
-                cerr << "first: in lineno: " << lineno << ", token: " << names[input_token] << endl;
+                cerr << "first: in lineno: " << lineno << ", token: " << token_image << endl;
                 stmt();
                 input_token = scan();
                 return;
             } else if (find(follow_S.begin(), follow_S.end(), input_token) != follow_S.end()) {
-                cerr << "follow:  in lineno: " << lineno << ", token: " << names[input_token] << endl;
+                cerr << "follow:  in lineno: " << lineno << ", token: " << token_image << endl;
                 input_token = scan();
                 return;
             } else {
-                cerr << "discard token: " << names[input_token] << ", error in lineno: " << lineno << endl;
+                cerr << "discard token: " << token_image << ", error in lineno: " << lineno << endl;
                 input_token = scan();
             }
         }
@@ -316,27 +316,27 @@ bin_op* relation() {
 //            error ();
                 throw RelationException();
         }
-        return binary_op;
     } catch (RelationException &re) {
         cerr << re.what() << " , line number: " << lineno << endl;
 
         while ((input_token = scan())) {
             // recover
             if (find(first_R.begin(), first_R.end(), input_token) != first_R.end()) {
-                cerr << "first: in lineno: " << lineno << ", token: " << names[input_token] << endl;
+                cerr << "first: in lineno: " << lineno << ", token: " << token_image << endl;
                 expr(binary_op);
 //                input_token = scan();
                 return binary_op;
             } else if (find(follow_R.begin(), follow_R.end(), input_token) != follow_R.end()) {
-                cerr << "follow:  in lineno: " << lineno << ", token: " << names[input_token] << endl;
+                cerr << "follow:  in lineno: " << lineno << ", token: " << token_image << endl;
 //                input_token = scan();
                 return binary_op;
             } else {
-                cerr << "discard token: " << names[input_token] << ", error in lineno: " << lineno << endl;
+                cerr << "discard token: " << token_image << ", error in lineno: " << lineno << endl;
                 input_token = scan();
             }
         }
     }
+    return binary_op;
 }
 
 void expr (bin_op* binary_op) {
@@ -354,7 +354,7 @@ void expr (bin_op* binary_op) {
                 throw ExpressionException();
         }
     } catch (ExpressionException& ee) {
-        cerr << ee.what() << " , line number: " << lineno << endl;
+        cerr << ee.what() << ": error in line number: " << lineno << endl;
 
         while ((input_token = scan())) {
             // recover

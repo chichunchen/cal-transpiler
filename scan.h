@@ -12,3 +12,7 @@ enum token {
 extern char token_image[100];
 
 extern token scan();
+extern token get_next_token();
+
+extern int lineno;
+

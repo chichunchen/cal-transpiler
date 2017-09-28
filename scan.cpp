@@ -17,9 +17,13 @@ char token_image[100];
 int lineno = 1;
 token look_ahead = t_none;
 
-void incr_line (char c) {
-    if (c == '\n')
+char lineno_getchar() {
+    char c = getchar();
+    if (c == '\n') {
         lineno++;
+//        DEBUG(endl << "add line" << endl);
+    }
+    return c;
 }
 
 token scan() {
@@ -35,17 +39,15 @@ token scan() {
 
     /* skip white space */
     while (isspace(c)) {
-        c = getchar();
+        c = lineno_getchar();
     }
     if (c == EOF)
         return t_eof;
     if (isalpha(c)) {
         do {
             token_image[i++] = c;
-            c = getchar();
+            c = lineno_getchar();
         } while (isalpha(c) || isdigit(c) || c == '_');
-
-        incr_line(c);
 
         token_image[i] = '\0';
         if (!strcmp(token_image, "if")) return t_if;
@@ -59,72 +61,70 @@ token scan() {
     } else if (isdigit(c)) {
         do {
             token_image[i++] = c;
-            c = getchar();
+            c = lineno_getchar();
         } while (isdigit(c));
-
-        incr_line(c);
 
         token_image[i] = '\0';
         return t_literal;
     } else {
         switch (c) {
             case ':':
-                if ((c = getchar()) != '=') {
+                if ((c = lineno_getchar()) != '=') {
                     cerr << "error" << endl;
                     exit(1);
                 } else {
-                    c = getchar();
+                    c = lineno_getchar();
                     return t_gets;
                 }
                 break;
             case '+':
-                c = getchar();
+                c = lineno_getchar();
                 return t_add;
             case '-':
-                c = getchar();
+                c = lineno_getchar();
                 return t_sub;
             case '*':
-                c = getchar();
+                c = lineno_getchar();
                 return t_mul;
             case '/':
-                c = getchar();
+                c = lineno_getchar();
                 return t_div;
             case '(':
-                c = getchar();
+                c = lineno_getchar();
                 return t_lparen;
             case ')':
-                c = getchar();
+                c = lineno_getchar();
                 return t_rparen;
             case '=':
-                if ((c = getchar()) != '=') {
+                if ((c = lineno_getchar()) != '=') {
                     cerr << "error" << endl;
                     exit(1);
                 } else {
-                    c = getchar();
+                    c = lineno_getchar();
                     return t_eq;
                 }
             case '<':
-                c = getchar();
+                c = lineno_getchar();
                 if (c == '>') {
-                    c = getchar();
+                    c = lineno_getchar();
                     return t_noteq;
                 } else if (c == '=') {
-                    c = getchar();
+                    c = lineno_getchar();
                     return t_lte;
                 } else if (c == ' ') {
-                    c = getchar();
+                    c = lineno_getchar();
                     return t_lt;
                 } else {
                     cerr << "error" << endl;
                     exit(1);
                 }
             case '>':
-                c = getchar();
+                c = lineno_getchar();
                 if (c == '=') {
-                    c = getchar();
+                    c = lineno_getchar();
                     return t_gte;
                 } else if (c == ' ') {
-                    c = getchar();
+                    c = lineno_getchar();
                     return t_gt;
                 } else {
                     cerr << "error" << endl;
@@ -134,7 +134,6 @@ token scan() {
                 cout << "error" << endl;
                 exit(1);
         }
-        incr_line(c);
     }
 }
 
