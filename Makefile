@@ -6,7 +6,7 @@
 CC = g++
 CFLAGS = -g -Wall -O2
 
-parse: parse.o scan.o
+parse: parse.o scan.o debug.h
 	$(CC) $(CFLAGS) -o parse parse.o scan.o
 
 clean:
