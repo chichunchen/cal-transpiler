@@ -143,16 +143,68 @@ void relation_op(bin_op*);
 void add_op (bin_op*);
 void mul_op (bin_op*);
 
+void print_program_ast(st_list* root);
+void print_stmt_list(st_list* root);
 void print_relation(bin_op* root);
 
 st_list* pg_sl_root;
+
+void print_program_ast(st_list* root) {
+    cout << "(program" << endl;
+    cout << "[ ";
+    print_stmt_list(pg_sl_root);
+    cout << "] ";
+    cout << endl << ") ";
+}
+
+void print_stmt_list(st_list* root) {
+    if (root->l_child != NULL) {
+        cout << "(";
+        switch(root->l_child->type) {
+            case t_id:
+                cout << ":= \"" << root->l_child->id << "\"";
+                print_relation(root->l_child->rel);
+                break;
+            case t_read:
+                cout << "read \"" << root->l_child->id << "\"";
+                break;
+            case t_write:
+                cout << "write ";
+                print_relation(root->l_child->rel);
+                break;
+            case t_do:
+                cout << "do" << endl;
+
+                cout << "[" << endl;
+                print_stmt_list(root->l_child->sl);
+                cout << "]" << endl;
+                break;
+            case t_if:
+                cout << "if " << endl;
+                print_relation(root->l_child->rel);
+
+                cout << "[" << endl;
+                print_stmt_list(root->l_child->sl);
+                cout << "]" << endl;
+                break;
+            case t_check:
+                cout << "check ";
+                print_relation(root->l_child->rel);
+                break;
+            default:
+                cerr << "wrong type" << endl;
+        }
+        cout << ")" << endl;
+    }
+    if (root->r_child != NULL)
+        print_stmt_list(root->r_child);
+}
 
 void program () {
     pg_sl_root = (st_list*) malloc(sizeof(st_list));
     pg_sl_root->l_child = NULL;
     pg_sl_root->r_child = NULL;
 
-    AST("(program" << endl);
     switch (input_token) {
         /* First(program) */
         case t_id:
@@ -163,14 +215,13 @@ void program () {
         case t_check:
         case t_eof:
             PREDICT("predict program --> stmt_list eof" << endl);
-            AST("[ ");
             stmt_list (pg_sl_root);
-            AST("]");
             match (t_eof, false);
             break;
         default: error ();
     }
-    AST(endl << ")");
+
+    print_program_ast(pg_sl_root);
 }
 
 // stList is decided on the caller
@@ -186,7 +237,6 @@ st_list* stmt_list (st_list* stList) {
         case t_do:
         case t_check:
             PREDICT("predict stmt_list --> stmt stmt_list");
-            AST("(");
 
             stList->l_child = stmt ();
 
@@ -197,7 +247,6 @@ st_list* stmt_list (st_list* stList) {
             stList->r_child = new_sl;
             stList = stList->r_child;
 
-            AST(")" << endl);
             stmt_list (stList);
             break;
         /* Follow(stmt_list) has (Follow(stmt) and Follow(R)) */
@@ -207,7 +256,6 @@ st_list* stmt_list (st_list* stList) {
             PREDICT("predict stmt_list --> epsilon" << endl);
             break;          /*  epsilon production */
         default:
-            AST("error: " << input_token << endl);
             error ();
     }
     return stList;
@@ -224,15 +272,11 @@ st* stmt () {
         switch (input_token) {
             case t_id:
                 PREDICT("predict stmt --> id gets expr" << endl);
-                AST(":= ");
-                AST("\"");
                 strcpy(statement->id, token_image);
                 match (t_id, true);
-                AST("\"");
                 match (t_gets, false);
                 // the bracket only show while there is more than one child
                 rel = relation();
-                print_relation(rel);
 
                 statement->type = t_id;
                 statement->rel = rel;
@@ -241,11 +285,8 @@ st* stmt () {
             case t_read:
                 PREDICT("predict stmt --> read id" << endl);
                 match (t_read, false);
-                AST("read ");
-                AST("\"");
                 strcpy(statement->id, token_image);
                 match (t_id, true);
-                AST("\"");
 
                 statement->type = t_read;
                 statement->sl = NULL;
@@ -254,9 +295,7 @@ st* stmt () {
             case t_write:
                 PREDICT("predict stmt --> write relation" << endl);
                 match (t_write, false);
-                AST("write");
                 rel = relation();
-                print_relation(rel);
 
                 statement->type = t_write;
                 statement->rel = rel;
@@ -266,12 +305,8 @@ st* stmt () {
             case t_if:
                 PREDICT("predict stmt --> if R SL fi" << endl);
                 match (t_if, false);
-                AST("if\n");
 
                 rel = relation();
-                print_relation(rel);
-
-                AST(endl << "[ ");
 
                 sl_root = (st_list*) malloc(sizeof(st_list));
                 stmt_list (sl_root);
@@ -281,14 +316,11 @@ st* stmt () {
                 statement->sl = sl_root;
                 statement->id[0] = '\0';
 
-                AST("]" << endl);
                 match (t_fi, false);
                 break;
             case t_do:
                 PREDICT("predict stmt --> do SL od" << endl);
                 match (t_do, false);
-                AST("do\n");
-                AST("[ ");
 
                 sl_root = (st_list*) malloc(sizeof(st_list));
                 stmt_list (sl_root);
@@ -298,16 +330,13 @@ st* stmt () {
                 statement->rel = NULL;
                 statement->id[0] = '\0';
 
-                AST("]" << endl);
                 match (t_od, false);
                 break;
             case t_check:
                 PREDICT("predict stmt --> check R" << endl);
                 match (t_check, false);
-                AST("check");
 
                 rel = relation();
-                print_relation(rel);
 
                 statement->type = t_check;
                 statement->rel = rel;
@@ -347,38 +376,40 @@ st* stmt () {
 
 // prefix tree traversal
 void print_relation(bin_op* root) {
-    if (root->l_child != NULL && root->r_child != NULL)
-        AST(" (");
+    if (root->l_child != NULL && root->r_child != NULL) {
+        cout << " (";
+    }
 
     if (root) {
         if (root->type == t_id) {
-            AST("(id \"");
-            AST(root->name);
-            AST("\")");
+            cout << "(id \"";
+            cout << root->name;
+            cout << "\")";
         }
         else if (root->type == t_literal) {
-            AST("(num \"");
-            AST(root->name);
-            AST("\")");
+            cout << "(num \"";
+            cout << root->name;
+            cout << "\")";
         }
         else {
             // print op
-            AST(root->name);
+            cout << root->name;
         }
     }
 
     if (root->l_child) {
-        AST(" ");
+        cout << " ";
         print_relation(root->l_child);
     }
 
     if (root->r_child) {
-        AST(" ");
+        cout << " ";
         print_relation(root->r_child);
     }
 
-    if (root->l_child != NULL && root->r_child != NULL)
-        AST(")");
+    if (root->l_child != NULL && root->r_child != NULL) {
+        cout << ")";
+    }
 }
 
 // init with null binary_op and return filled binary_op
