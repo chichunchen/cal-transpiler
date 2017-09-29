@@ -177,7 +177,7 @@ void match (token expected, bool print) {
     }
     else {
         cerr << endl;
-        cerr << "match error in line: " << lineno << " , get " << names[input_token] <<
+        cerr << "match error in line: " << lineno << " expect: " << names[expected] << ", get " << names[input_token] <<
                 ", insert: " << names[expected] << endl;
         return;
     }
@@ -440,7 +440,7 @@ bin_op* relation() {
     return binary_op;
 }
 
-void expr (bin_op* binary_op) {
+void expr (bin_op* binary_op) {      //Need to add extra param for context specific. (expr, rel, stmt_list,term, term_tail,factor, factor_tail).
 	
 	check_for_error(__FUNCTION__, follow_E);
 	try {
