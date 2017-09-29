@@ -20,12 +20,27 @@ using namespace std;
 /*
  * ast structs
  */
+
+typedef struct _st st;
+
 typedef struct _bin_op {
     token type;
     char name[100];
     struct _bin_op* l_child;
     struct _bin_op* r_child;
 } bin_op;
+
+typedef struct _st_list {
+    st* l_child;
+    _st_list* r_child;
+} st_list;
+
+typedef struct _st {
+    token type;         // id, read, write, if, do, check
+    char id[100];
+    bin_op* rel;
+    st_list* sl;
+} st;
 
 static const int first_S_[] = {t_id, t_read, t_write, t_if, t_do, t_check};
 static const int follow_S_[] = {t_id, t_read, t_write, t_if, t_do, t_check, t_eof};
@@ -115,8 +130,8 @@ void match (token expected, bool print) {
 }
 
 void program ();
-void stmt_list ();
-void stmt ();
+st_list* stmt_list (st_list* stList);
+st* stmt ();
 bin_op* relation ();
 void expr (bin_op*);
 void expr_tail(bin_op*);
@@ -130,7 +145,13 @@ void mul_op (bin_op*);
 
 void print_relation(bin_op* root);
 
+st_list* pg_sl_root;
+
 void program () {
+    pg_sl_root = (st_list*) malloc(sizeof(st_list));
+    pg_sl_root->l_child = NULL;
+    pg_sl_root->r_child = NULL;
+
     AST("(program" << endl);
     switch (input_token) {
         /* First(program) */
@@ -143,7 +164,7 @@ void program () {
         case t_eof:
             PREDICT("predict program --> stmt_list eof" << endl);
             AST("[ ");
-            stmt_list ();
+            stmt_list (pg_sl_root);
             AST("]");
             match (t_eof, false);
             break;
@@ -152,7 +173,10 @@ void program () {
     AST(endl << ")");
 }
 
-void stmt_list () {
+// stList is decided on the caller
+st_list* stmt_list (st_list* stList) {
+    st_list* new_sl;
+
     switch (input_token) {
         /* First(stmt_list) */
         case t_id:
@@ -163,9 +187,18 @@ void stmt_list () {
         case t_check:
             PREDICT("predict stmt_list --> stmt stmt_list");
             AST("(");
-            stmt ();
+
+            stList->l_child = stmt ();
+
+            new_sl = (st_list*) malloc(sizeof(st_list));
+            new_sl->l_child = NULL;
+            new_sl->r_child = NULL;
+
+            stList->r_child = new_sl;
+            stList = stList->r_child;
+
             AST(")" << endl);
-            stmt_list ();
+            stmt_list (stList);
             break;
         /* Follow(stmt_list) has (Follow(stmt) and Follow(R)) */
         case t_eof:
@@ -177,10 +210,15 @@ void stmt_list () {
             AST("error: " << input_token << endl);
             error ();
     }
+    return stList;
 }
 
-void stmt () {
+st* stmt () {
     bin_op* root;
+    bin_op* rel;
+    st_list* stList;
+    st* statement = (st*) malloc(sizeof(st));
+    st_list* sl_root;       // do and if
 
     try {
         switch (input_token) {
@@ -188,33 +226,61 @@ void stmt () {
                 PREDICT("predict stmt --> id gets expr" << endl);
                 AST(":= ");
                 AST("\"");
+                strcpy(statement->id, token_image);
                 match (t_id, true);
                 AST("\"");
                 match (t_gets, false);
                 // the bracket only show while there is more than one child
-                print_relation(relation ());
+                rel = relation();
+                print_relation(rel);
+
+                statement->type = t_id;
+                statement->rel = rel;
+                statement->sl = NULL;
                 break;
             case t_read:
                 PREDICT("predict stmt --> read id" << endl);
                 match (t_read, false);
                 AST("read ");
                 AST("\"");
+                strcpy(statement->id, token_image);
                 match (t_id, true);
                 AST("\"");
+
+                statement->type = t_read;
+                statement->sl = NULL;
+                statement->rel = NULL;
                 break;
             case t_write:
                 PREDICT("predict stmt --> write relation" << endl);
                 match (t_write, false);
                 AST("write");
-                print_relation(relation ());
+                rel = relation();
+                print_relation(rel);
+
+                statement->type = t_write;
+                statement->rel = rel;
+                statement->sl = NULL;
+                statement->id[0] = '\0';
                 break;
             case t_if:
                 PREDICT("predict stmt --> if R SL fi" << endl);
                 match (t_if, false);
                 AST("if\n");
-                print_relation(relation ());
+
+                rel = relation();
+                print_relation(rel);
+
                 AST(endl << "[ ");
-                stmt_list ();
+
+                sl_root = (st_list*) malloc(sizeof(st_list));
+                stmt_list (sl_root);
+
+                statement->type = t_if;
+                statement->rel = rel;
+                statement->sl = sl_root;
+                statement->id[0] = '\0';
+
                 AST("]" << endl);
                 match (t_fi, false);
                 break;
@@ -223,7 +289,15 @@ void stmt () {
                 match (t_do, false);
                 AST("do\n");
                 AST("[ ");
-                stmt_list ();
+
+                sl_root = (st_list*) malloc(sizeof(st_list));
+                stmt_list (sl_root);
+
+                statement->type = t_do;
+                statement->sl = sl_root;
+                statement->rel = NULL;
+                statement->id[0] = '\0';
+
                 AST("]" << endl);
                 match (t_od, false);
                 break;
@@ -231,7 +305,15 @@ void stmt () {
                 PREDICT("predict stmt --> check R" << endl);
                 match (t_check, false);
                 AST("check");
-                print_relation(relation ());
+
+                rel = relation();
+                print_relation(rel);
+
+                statement->type = t_check;
+                statement->rel = rel;
+                statement->sl = NULL;
+                statement->id[0] = '\0';
+
                 break;
             default:
                 cerr << "Deleting token: " << token_image << endl;
@@ -246,20 +328,21 @@ void stmt () {
                 cerr << "lineno: " << lineno << ", token: " << token_image << " in first set" << endl;
                 stmt();
                 input_token = scan();
-                return;
+                return statement;
             } else if (find(follow_S.begin(), follow_S.end(), input_token) != follow_S.end()) {
                 cerr << "lineno: " << lineno << ", token: " << token_image << " in follow set" << endl;
                 input_token = scan();
-                return;
+                return statement;
             } else {
                 cerr << "deleting token: " << token_image << ", error in lineno: " << lineno << endl;
                 input_token = scan();
 
                 if (input_token == t_eof)
-                    return;
+                    return statement;
             }
         }
     }
+    return statement;
 }
 
 // prefix tree traversal

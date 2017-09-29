@@ -64,8 +64,8 @@ first: in lineno: 1, token: a
     - [ ] outputXX.txt as the output AST for the correspondent testXX.txt
 - [X] Extend the language with if and do/check statements
 - [X] Implement exception-based syntax error recovery, as described in Section 2.3.5 on the textbook’s companion site. At the least, you should attach handlers to statements, relations, and expressions.
-- [ ] Output a syntax tree with the structure suggested
-    - [ ] Build a abstract syntax tree
+- [X] Output a syntax tree with the structure suggested
+    - [X] Build an abstract syntax tree
     - [X] Order of operator
     - [X] Shows bracket in R if more than one child
 
