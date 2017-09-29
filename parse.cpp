@@ -445,18 +445,18 @@ void term_tail (bin_op* binary_op, token context) {
         case t_do:
         case t_od:
         case t_check:
-            if (context == t_id) {
-                token specfic_token[] = { t_eq, t_noteq, t_gt, t_lt, t_gte, t_lte };
-                for (int i = 0; i < 8; i++) {
-                    if (specfic_token[i] == input_token)
-                        return;
-                }
-                throw ExpressionException();
-            }
-            else {
+//             if (context == t_id) {
+//                 token specfic_token[] = { t_eq, t_noteq, t_gt, t_lt, t_gte, t_lte };
+//                 for (int i = 0; i < 8; i++) {
+//                     if (specfic_token[i] == input_token)
+//                         return;
+//                 }
+//                 throw ExpressionException();
+//             }
+//             else {
                 PREDICT("predict term_tail --> epsilon" << endl);
                 break;          /*  epsilon production */
-            }
+            //}
         default:
             //cerr << "Deleting token: " << token_image << endl;
             throw ExpressionException();
@@ -491,18 +491,18 @@ void factor_tail (bin_op* binary_op, token context) {
         case t_do:
         case t_od:
         case t_check:
-            if (context == t_id) {
-                token specfic_token[] = { t_add, t_sub, t_eq, t_noteq, t_gt, t_lt, t_gte, t_lte };
-                for (int i = 0; i < 8; i++) {
-                    if (specfic_token[i] == input_token)
-                        return;
-                }
-                throw ExpressionException();
-            }
-            else {
+//             if (context == t_id) {
+//                 token specfic_token[] = { t_add, t_sub, t_eq, t_noteq, t_gt, t_lt, t_gte, t_lte };
+//                 for (int i = 0; i < 8; i++) {
+//                     if (specfic_token[i] == input_token)
+//                         return;
+//                 }
+//                 throw ExpressionException();
+//             }
+//             else {
                 PREDICT("predict factor_tail --> epsilon" << endl);
                 break;          /*  epsilon production */
-            }
+            //}
         default:
             //cerr << "Deleting token: " << token_image << endl;
             throw ExpressionException();
