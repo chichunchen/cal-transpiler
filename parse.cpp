@@ -8,7 +8,7 @@
 #include <iostream>
 #include <cstdlib>
 #include <cstring>
-#include <stdio.h>
+#include <cstdio>
 #include <set>
 #include <algorithm>
 
@@ -33,16 +33,20 @@ set<int> first_S(first_S_, first_S_ + sizeof(first_S_) / sizeof(int));
 set<int> follow_S(follow_S_, follow_S_ + sizeof(follow_S_) / sizeof(int));
 
 static const int first_R_[] = {t_lparen, t_id, t_literal};
-static const int follow_R_[] = {t_rparen, t_id, t_read, t_write, t_if, t_do, t_check, t_fi, t_od};
-static const int ro[] = {t_eq, t_noteq, t_lt, t_gt, t_lte, t_gte};
+static const int follow_R_[] = {t_rparen, t_id, t_read, t_write, t_if, t_do, t_check, t_fi, t_od, t_eof};
+static const int ro_[] = {t_eq, t_noteq, t_lt, t_gt, t_lte, t_gte};
 set<int> first_R(first_R_, first_R_ + sizeof(first_R_) / sizeof(int));
 set<int> follow_R(follow_R_, follow_R_ + sizeof(follow_R_) / sizeof(int));
+set<int> ro(ro_, ro_ + sizeof(ro_) / sizeof(int));
 
 static const int first_E_[] = {t_lparen, t_id, t_literal};
 set<int> first_E(first_E_, first_E_ + sizeof(first_E_) / sizeof(int));
 
 static const int follow_E_[] = {t_rparen, t_id, t_read, t_write, t_if, t_do, t_check, t_fi, t_od, t_eq, t_noteq, t_lt, t_gt, t_lte, t_gte};
 set<int> follow_E(follow_E_, follow_E_ + sizeof(follow_E_) / sizeof(int));
+
+static const int starter_[] = {t_lparen, t_if, t_do};
+set<int> starter(starter_, starter_ + sizeof(starter_) / sizeof(int));
 
 //set<int> first_F = first_E;
 //static const int follow_F_[] = {t_rparen, t_id, t_read, t_write, t_if, t_do, t_check, t_fi, t_od, t_eq, t_noteq, t_lt, t_gt, t_lte, t_gte, t_mul, t_div, t_add, t_sub};
@@ -56,6 +60,13 @@ enum Context {
 /*
  * customized exception classes
  */
+
+struct StatementlistException : public exception {
+    const char * what () const throw () {
+        return "Statementlist Exception";
+    }
+};
+
 struct StatementException : public exception {
     const char * what () const throw () {
         return "Statement Exception";
@@ -83,6 +94,52 @@ const char* names[] = {"read", "write", "id", "literal", "gets",
                        "eq", "noteq", "lt", "gt", "lte", "gte" , "none"};
 
 static token input_token;
+
+bool EPS(const char* symbol) {
+	if (strcmp(symbol, "stmt_list") == 0
+		or strcmp(symbol, "expr_tail") == 0
+		or strcmp(symbol, "expr_tail") == 0
+		or strcmp(symbol, "term_tail") == 0
+		or strcmp(symbol, "factor_tail") == 0)
+		return true;
+	else
+		return false;
+}
+ 
+set<int> FIRST(const char* symbol) {
+
+	if (strcmp(symbol, "stmt") == 0)
+		return first_S;
+	
+	if (strcmp(symbol, "relation") == 0)
+		return first_R;
+
+	if (strcmp(symbol, "expr") == 0)
+		return first_R;
+	
+	if (strcmp(symbol, "stmt_list") == 0)
+		return first_S;
+}
+
+void check_for_error(const char* symbol, set<int> follow_set) {
+	set<int> first_set = FIRST(symbol);
+	const bool is_in_first = first_set.find(input_token) != first_set.end();
+	const bool is_in_follow = follow_set.find(input_token) != follow_set.end();
+	const bool is_in_starter = starter.find(input_token) != starter.end();
+	
+	cout << symbol << ".." << names[input_token] << ", !(" << is_in_first << "|| (" << is_in_follow << "&&" << is_in_starter << ")\n";
+	
+	
+	if (!(is_in_first || (EPS(symbol) && is_in_follow))) {
+		cerr << "Context specific fawoeijfhvioc" << endl;
+		do {
+			input_token = scan();
+		
+		} while(!(is_in_follow or is_in_first or is_in_starter));
+
+	}
+
+}
 
 void error () {
     cerr << "syntax error at line: " << lineno << endl;
@@ -148,35 +205,63 @@ void program () {
 }
 
 void stmt_list () {
-    switch (input_token) {
-        /* First(stmt_list) */
-        case t_id:
-        case t_read:
-        case t_write:
-        case t_if:
-        case t_do:
-        case t_check:
-            PREDICT("predict stmt_list --> stmt stmt_list");
-            AST("(");
-            stmt ();
-            AST(")" << endl);
-            stmt_list ();
-            break;
-        /* Follow(stmt_list) has (Follow(stmt) and Follow(R)) */
-        case t_eof:
-        case t_fi:
-        case t_od:
-            PREDICT("predict stmt_list --> epsilon" << endl);
-            break;          /*  epsilon production */
-        default:
-            AST("error: " << input_token << endl);
-            error ();
+	set<int> follow_set;
+	follow_set.insert(t_eof);
+	check_for_error(__FUNCTION__, follow_set);
+	
+	try{
+		switch (input_token) {
+			/* First(stmt_list) */
+			case t_id:
+			case t_read:
+			case t_write:
+			case t_if:
+			case t_do:
+			case t_check:
+				PREDICT("predict stmt_list --> stmt stmt_list");
+				AST("(");
+				stmt ();
+				AST(")" << endl);
+				stmt_list ();
+				break;
+				/* Follow(stmt_list) has (Follow(stmt) and Follow(R)) */
+			case t_eof:
+//			case t_fi:
+//			case t_od:
+				PREDICT("predict stmt_list --> epsilon" << endl);
+				break;          /*  epsilon production */
+			default:
+				cerr << "Deleting token: " << token_image << endl;
+				throw StatementlistException();
+		}
+	} catch (StatementlistException ste) {
+		cerr << ste.what() << " " << token_image << " , line number: " << lineno << endl;
+
+        while ((input_token = scan())) {
+            // recover
+            if (find(first_S.begin(), first_S.end(), input_token) != first_S.end()) {
+                cerr << "first: in lineno: " << lineno << ", token: " << token_image << endl;
+                stmt();
+                input_token = scan();
+                return;
+            } else if (input_token != t_eof) {
+                cerr << "follow:  in lineno: " << lineno << ", token: " << token_image << endl;
+                input_token = scan();
+                return;
+            } else {
+                cerr << "deleting token: " << token_image << ", error in lineno: " << lineno << endl;
+                input_token = scan();
+
+                if (input_token == t_eof)
+                    return;
+            }
+        }
     }
 }
 
 void stmt () {
     bin_op* root;
-
+	check_for_error(__FUNCTION__, follow_S);
     try {
         switch (input_token) {
             case t_id:
@@ -300,6 +385,7 @@ bin_op* relation() {
     binary_op->l_child = NULL;
     binary_op->r_child = NULL;
 
+	check_for_error(__FUNCTION__, follow_R);
     try {
         switch (input_token) {
             case t_id:
@@ -338,7 +424,9 @@ bin_op* relation() {
 }
 
 void expr (bin_op* binary_op) {
-    try {
+	
+	check_for_error(__FUNCTION__, follow_E);
+	try {
         switch (input_token) {
             case t_id:
             case t_literal:
