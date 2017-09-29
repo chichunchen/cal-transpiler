@@ -103,7 +103,8 @@ void match (token expected, bool print) {
     }
     else {
         cerr << endl;
-        cerr << "line: " << lineno << ", expect: " << names[expected] << " , get " << names[input_token] << endl;
+        cerr << "match error in line: " << lineno << " , get " << names[input_token] <<
+                ", insert: " << names[expected] << endl;
         return;
     }
 }
@@ -114,10 +115,10 @@ void stmt ();
 bin_op* relation ();
 void expr (bin_op*);
 void expr_tail(bin_op*);
-void term (bin_op*);
-void term_tail (bin_op*);
-void factor_tail (bin_op*);
-void factor (bin_op*);
+void term (bin_op*, token c);
+void term_tail (bin_op*, token c);
+void factor_tail (bin_op*, token c);
+void factor (bin_op*, token c);
 void relation_op(bin_op*);
 void add_op (bin_op*);
 void mul_op (bin_op*);
@@ -228,7 +229,7 @@ void stmt () {
                 print_relation(relation ());
                 break;
             default:
-//                error ();
+                cerr << "Deleting token: " << token_image << endl;
                 throw StatementException();
         }
     } catch (StatementException se) {
@@ -246,7 +247,7 @@ void stmt () {
                 input_token = scan();
                 return;
             } else {
-                cerr << "discard token: " << token_image << ", error in lineno: " << lineno << endl;
+                cerr << "deleting token: " << token_image << ", error in lineno: " << lineno << endl;
                 input_token = scan();
 
                 if (input_token == t_eof)
@@ -309,6 +310,7 @@ bin_op* relation() {
                 expr_tail (binary_op);
                 break;
             default:
+                //cerr << "Deleting token: " << token_image << endl;
                 throw RelationException();
         }
     } catch (RelationException &re) {
@@ -324,7 +326,7 @@ bin_op* relation() {
                 cerr << "follow:  in lineno: " << lineno << ", token: " << token_image << endl;
                 return binary_op;
             } else {
-                cerr << "discard token: " << token_image << ", error in lineno: " << lineno << endl;
+                cerr << "deleting token: " << token_image << ", error in lineno: " << lineno << endl;
                 input_token = scan();
 
                 if (input_token == t_eof)
@@ -342,11 +344,11 @@ void expr (bin_op* binary_op) {
             case t_literal:
             case t_lparen:
                 PREDICT("predict expr --> term term_tail" << endl);
-                term (binary_op);
-                term_tail (binary_op);
+                term (binary_op, input_token);
+                term_tail (binary_op, input_token);
                 break;
             default:
-                //error ();
+                //cerr << "Deleting token: " << token_image << endl;
                 throw ExpressionException();
         }
     } catch (ExpressionException& ee) {
@@ -363,7 +365,7 @@ void expr (bin_op* binary_op) {
                 cerr << "follow:  in lineno: " << lineno << ", token: " << names[input_token] << endl;
                 return;
             } else {
-                cerr << "discard token: " << names[input_token] << ", error in lineno: " << lineno << endl;
+                cerr << "deleting token: " << names[input_token] << ", error in lineno: " << lineno << endl;
                 input_token = scan();
 
                 if (input_token == t_eof)
@@ -398,34 +400,34 @@ void expr_tail(bin_op* binary_op) {
             PREDICT("predict expr_tail --> epsilon" << endl);
             break;
         default:
-//            cerr << "error: " << input_token << endl;
-//            error();
+            //cerr << "Deleting token: " << token_image << endl;
             throw ExpressionException();
     }
 }
 
-void term (bin_op* binary_op) {
+void term (bin_op* binary_op, token context) {
     switch (input_token) {
         case t_id:
         case t_literal:
         case t_lparen:
             PREDICT("predict term --> factor factor_tail" << endl);
-            factor (binary_op);
-            factor_tail (binary_op);
+            factor (binary_op, context);
+            factor_tail (binary_op, context);
             break;
         default:
+            //cerr << "Deleting token: " << token_image << endl;
             throw ExpressionException();
     }
 }
 
-void term_tail (bin_op* binary_op) {
+void term_tail (bin_op* binary_op, token context) {
     switch (input_token) {
         case t_add:
         case t_sub:
             PREDICT("predict term_tail --> add_op term term_tail" << endl);
             add_op (binary_op);
-            term (binary_op);
-            term_tail (binary_op);
+            term (binary_op, context);
+            term_tail (binary_op, context);
             break;
         case t_rparen:
         case t_id:
@@ -443,21 +445,32 @@ void term_tail (bin_op* binary_op) {
         case t_do:
         case t_od:
         case t_check:
-            PREDICT("predict term_tail --> epsilon" << endl);
-            break;          /*  epsilon production */
+            if (context == t_id) {
+                token specfic_token[] = { t_eq, t_noteq, t_gt, t_lt, t_gte, t_lte };
+                for (int i = 0; i < 8; i++) {
+                    if (specfic_token[i] == input_token)
+                        return;
+                }
+                throw ExpressionException();
+            }
+            else {
+                PREDICT("predict term_tail --> epsilon" << endl);
+                break;          /*  epsilon production */
+            }
         default:
+            //cerr << "Deleting token: " << token_image << endl;
             throw ExpressionException();
     }
 }
 
-void factor_tail (bin_op* binary_op) {
+void factor_tail (bin_op* binary_op, token context) {
     switch (input_token) {
         case t_mul:
         case t_div:
             PREDICT("predict factor_tail --> mul_op factor factor_tail" << endl);
             mul_op (binary_op);
-            factor (binary_op);
-            factor_tail (binary_op);
+            factor (binary_op, context);
+            factor_tail (binary_op, context);
             break;
         /* Follow(factor_tail) */
         case t_add:
@@ -478,15 +491,25 @@ void factor_tail (bin_op* binary_op) {
         case t_do:
         case t_od:
         case t_check:
-            PREDICT("predict factor_tail --> epsilon" << endl);
-            break;          /*  epsilon production */
+            if (context == t_id) {
+                token specfic_token[] = { t_add, t_sub, t_eq, t_noteq, t_gt, t_lt, t_gte, t_lte };
+                for (int i = 0; i < 8; i++) {
+                    if (specfic_token[i] == input_token)
+                        return;
+                }
+                throw ExpressionException();
+            }
+            else {
+                PREDICT("predict factor_tail --> epsilon" << endl);
+                break;          /*  epsilon production */
+            }
         default:
-//            cerr << "error: " << input_token << endl;
+            //cerr << "Deleting token: " << token_image << endl;
             throw ExpressionException();
     }
 }
 
-void add_chile_to_null_node(bin_op* root, bin_op *child) {
+void add_child_to_null_node(bin_op* root, bin_op *child) {
     if (root->l_child == NULL) {
         root->l_child = child;
     }
@@ -494,11 +517,11 @@ void add_chile_to_null_node(bin_op* root, bin_op *child) {
         root->r_child = child;
     }
     else {
-        add_chile_to_null_node(root->r_child, child);
+        add_child_to_null_node(root->r_child, child);
     }
 }
 
-void factor (bin_op* binary_op) {
+void factor (bin_op* binary_op, token context) {
     bin_op* child;
 
     switch (input_token) {
@@ -513,7 +536,7 @@ void factor (bin_op* binary_op) {
 
             match (t_id, false);
 
-            add_chile_to_null_node(binary_op, child);
+            add_child_to_null_node(binary_op, child);
 
             break;
         case t_literal:
@@ -527,7 +550,7 @@ void factor (bin_op* binary_op) {
 
             match (t_literal, false);
 
-            add_chile_to_null_node(binary_op, child);
+            add_child_to_null_node(binary_op, child);
 
             break;
         case t_lparen:
@@ -537,18 +560,19 @@ void factor (bin_op* binary_op) {
             child = relation ();
 
             // find null child
-            add_chile_to_null_node(binary_op, child);
+            add_child_to_null_node(binary_op, child);
 
             match (t_rparen, false);
             break;
         default:
+            //cerr << "Deleting token: " << token_image << endl;
             throw ExpressionException();
     }
 }
 
 // if bin_op's type is not t_none
 // create a new node and swap it with the right node
-void AddOrCreateSwapNode(bin_op* binary_op, token tok) {
+void add_or_create_swap_node(bin_op* binary_op, token tok) {
 
     const char* print_names[] = {"read", "write", "id", "literal", "gets",
                            "+", "-", "*", "/", "lparen", "rparen", "eof",
@@ -573,45 +597,46 @@ void relation_op(bin_op* binary_op) {
             PREDICT("predict relation_op --> ==" << endl);
             match (t_eq, false);
 
-            AddOrCreateSwapNode(binary_op, t_eq);
+            add_or_create_swap_node(binary_op, t_eq);
 
             break;
         case t_noteq:
             PREDICT("predict relation_op --> <>" << endl);
             match (t_noteq, false);
 
-            AddOrCreateSwapNode(binary_op, t_noteq);
+            add_or_create_swap_node(binary_op, t_noteq);
 
             break;
         case t_lt:
             PREDICT("predict relation_op --> <" << endl);
             match (t_lt, false);
 
-            AddOrCreateSwapNode(binary_op, t_lt);
+            add_or_create_swap_node(binary_op, t_lt);
 
             break;
         case t_gt:
             PREDICT("predict relation_op --> >" << endl);
             match (t_gt, false);
 
-            AddOrCreateSwapNode(binary_op, t_gt);
+            add_or_create_swap_node(binary_op, t_gt);
 
             break;
         case t_lte:
             PREDICT("predict relation_op --> <=" << endl);
             match (t_lte, false);
 
-            AddOrCreateSwapNode(binary_op, t_lte);
+            add_or_create_swap_node(binary_op, t_lte);
 
             break;
         case t_gte:
             PREDICT("predict relation_op --> >=" << endl);
             match (t_gte, false);
 
-            AddOrCreateSwapNode(binary_op, t_gte);
+            add_or_create_swap_node(binary_op, t_gte);
 
             break;
         default:
+            //cerr << "Deleting token: " << token_image << endl;
             throw ExpressionException();
     }
 }
@@ -622,17 +647,18 @@ void add_op (bin_op* binary_op) {
             PREDICT("predict add_op --> add" << endl);
             match (t_add, false);
 
-            AddOrCreateSwapNode(binary_op, t_add);
+            add_or_create_swap_node(binary_op, t_add);
 
             break;
         case t_sub:
             PREDICT("predict add_op --> sub" << endl);
             match (t_sub, false);
 
-            AddOrCreateSwapNode(binary_op, t_sub);
+            add_or_create_swap_node(binary_op, t_sub);
 
             break;
         default:
+            //cerr << "Deleting token: " << token_image << endl;
             throw ExpressionException();
     }
 }
@@ -643,17 +669,18 @@ void mul_op (bin_op* binary_op) {
             PREDICT("predict mul_op --> mul" << endl);
             match (t_mul, false);
 
-            AddOrCreateSwapNode(binary_op, t_mul);
+            add_or_create_swap_node(binary_op, t_mul);
 
             break;
         case t_div:
             PREDICT("predict mul_op --> div" << endl);
             match (t_div, false);
 
-            AddOrCreateSwapNode(binary_op, t_div);
+            add_or_create_swap_node(binary_op, t_div);
 
             break;
         default:
+            //cerr << "Deleting token: " << token_image << endl;
             throw ExpressionException();
     }
 }
