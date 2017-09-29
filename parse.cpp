@@ -9,7 +9,7 @@
 #include <cstdlib>
 #include <cstring>
 #include <stdio.h>
-#include <vector>
+#include <set>
 #include <algorithm>
 
 #include "scan.h"
@@ -29,24 +29,24 @@ typedef struct _bin_op {
 
 static const int first_S_[] = {t_id, t_read, t_write, t_if, t_do, t_check};
 static const int follow_S_[] = {t_id, t_read, t_write, t_if, t_do, t_check, t_eof};
-vector<int> first_S(first_S_, first_S_ + sizeof(first_S_) / sizeof(int));
-vector<int> follow_S(follow_S_, follow_S_ + sizeof(follow_S_) / sizeof(int));
+set<int> first_S(first_S_, first_S_ + sizeof(first_S_) / sizeof(int));
+set<int> follow_S(follow_S_, follow_S_ + sizeof(follow_S_) / sizeof(int));
 
 static const int first_R_[] = {t_lparen, t_id, t_literal};
 static const int follow_R_[] = {t_rparen, t_id, t_read, t_write, t_if, t_do, t_check, t_fi, t_od};
 static const int ro[] = {t_eq, t_noteq, t_lt, t_gt, t_lte, t_gte};
-vector<int> first_R(first_R_, first_R_ + sizeof(first_R_) / sizeof(int));
-vector<int> follow_R(follow_R_, follow_R_ + sizeof(follow_R_) / sizeof(int));
+set<int> first_R(first_R_, first_R_ + sizeof(first_R_) / sizeof(int));
+set<int> follow_R(follow_R_, follow_R_ + sizeof(follow_R_) / sizeof(int));
 
 static const int first_E_[] = {t_lparen, t_id, t_literal};
-vector<int> first_E(first_E_, first_E_ + sizeof(first_E_) / sizeof(int));
+set<int> first_E(first_E_, first_E_ + sizeof(first_E_) / sizeof(int));
 
 static const int follow_E_[] = {t_rparen, t_id, t_read, t_write, t_if, t_do, t_check, t_fi, t_od, t_eq, t_noteq, t_lt, t_gt, t_lte, t_gte};
-vector<int> follow_E(follow_E_, follow_E_ + sizeof(follow_E_) / sizeof(int));
+set<int> follow_E(follow_E_, follow_E_ + sizeof(follow_E_) / sizeof(int));
 
-//vector<int> first_F = first_E;
+//set<int> first_F = first_E;
 //static const int follow_F_[] = {t_rparen, t_id, t_read, t_write, t_if, t_do, t_check, t_fi, t_od, t_eq, t_noteq, t_lt, t_gt, t_lte, t_gte, t_mul, t_div, t_add, t_sub};
-//vector<int> follow_F(follow_F_, follow_F_ + sizeof(follow_F_) / sizeof(int));
+//set<int> follow_F(follow_F_, follow_F_ + sizeof(follow_F_) / sizeof(int));
 
 enum Context {
     c_stmt_list, c_stmt, c_rel, c_expr, c_expr_tail, c_term, c_term_tail, c_factor, c_factor_tail,
