@@ -62,72 +62,111 @@ token scan() {
     } else {
         switch (c) {
             case ':':
+                token_image[0] = ':';
                 if ((c = lineno_get()) != '=') {
+                    token_image[1] = c;
+                    token_image[2] = '\0';
+
                     cerr << endl;
                     cerr << "line: " << lineno << ", expect: := , get: :" << char(c) << endl;
                     return t_none;
                 } else {
                     c = lineno_get();
+                    token_image[1] = '=';
+                    token_image[2] = '\0';
                     return t_gets;
                 }
                 break;
             case '+':
+                token_image[0] = '+';
+                token_image[1] = '\0';
                 c = lineno_get();
                 return t_add;
             case '-':
+                token_image[0] = '-';
+                token_image[1] = '\0';
                 c = lineno_get();
                 return t_sub;
             case '*':
+                token_image[0] = '*';
+                token_image[1] = '\0';
                 c = lineno_get();
                 return t_mul;
             case '/':
+                token_image[0] = '/';
+                token_image[1] = '\0';
                 c = lineno_get();
                 return t_div;
             case '(':
+                token_image[0] = '(';
+                token_image[1] = '\0';
                 c = lineno_get();
                 return t_lparen;
             case ')':
+                token_image[0] = ')';
+                token_image[1] = '\0';
                 c = lineno_get();
                 return t_rparen;
             case '=':
+                token_image[0] = '=';
                 if ((c = lineno_get()) != '=') {
+                    token_image[1] = c;
+                    token_image[2] = '\0';
                     cerr << endl;
                     cerr << "line: " << lineno << ", expect: == , get: =" << char(c) << endl;
                     return t_none;
                 } else {
+                    token_image[1] = '=';
+                    token_image[2] = '\0';
                     c = lineno_get();
                     return t_eq;
                 }
             case '<':
+                token_image[0] = '<';
                 c = lineno_get();
                 if (c == '>') {
+                    token_image[1] = '>';
+                    token_image[2] = '\0';
                     c = lineno_get();
                     return t_noteq;
                 } else if (c == '=') {
+                    token_image[1] = '=';
+                    token_image[2] = '\0';
                     c = lineno_get();
                     return t_lte;
                 } else if (c == ' ') {
+                    token_image[1] = '\0';
                     c = lineno_get();
                     return t_lt;
                 } else {
+                    token_image[1] = c;
+                    token_image[2] = '\0';
                     cerr << endl;
                     cerr << "line: " << lineno << ", expect: <= or <> , get: <" << char(c) << endl;
                     return t_none;
                 }
             case '>':
+                token_image[0] = '>';
                 c = lineno_get();
                 if (c == '=') {
+                    token_image[1] = '=';
+                    token_image[2] = '\0';
                     c = lineno_get();
                     return t_gte;
                 } else if (c == ' ') {
+                    token_image[1] = '\0';
                     c = lineno_get();
                     return t_gt;
                 } else {
+                    token_image[1] = c;
+                    token_image[2] = '\0';
                     cerr << endl;
                     cerr << "line: " << lineno << ", expect: >= , get: >" << char(c) << endl;
                     return t_none;
                 }
             default:
+                token_image[0] = c;
+                token_image[1] = '\0';
                 cerr << endl;
                 cerr << "line: " << lineno << ", get: " << char(c) << endl;
                 return t_none;

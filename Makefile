@@ -23,7 +23,7 @@ test03:
 
 test04:
 	./parse < test04.txt > output04.txt
-	diff correct04.txt output04.txt
+	diff --ignore-all-space correct04.txt output04.txt
 
 tests: test01 test02 test03 test04
 

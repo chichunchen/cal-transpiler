@@ -82,6 +82,11 @@ const char* names[] = {"read", "write", "id", "literal", "gets",
                        "if", "fi", "do", "od", "check",
                        "eq", "noteq", "lt", "gt", "lte", "gte" , "none"};
 
+const char* print_names[] = {"read", "write", "id", "literal", "gets",
+                             "+", "-", "*", "/", "lparen", "rparen", "eof",
+                             "if", "fi", "do", "od", "check",
+                             "==", "<>", "<", ">", "<=", ">=", "none"};
+
 static token input_token;
 
 void error () {
@@ -238,12 +243,12 @@ void stmt () {
         while ((input_token = scan())) {
             // recover
             if (find(first_S.begin(), first_S.end(), input_token) != first_S.end()) {
-                cerr << "first: in lineno: " << lineno << ", token: " << token_image << endl;
+                cerr << "lineno: " << lineno << ", token: " << token_image << " in first set" << endl;
                 stmt();
                 input_token = scan();
                 return;
             } else if (find(follow_S.begin(), follow_S.end(), input_token) != follow_S.end()) {
-                cerr << "follow:  in lineno: " << lineno << ", token: " << token_image << endl;
+                cerr << "lineno: " << lineno << ", token: " << token_image << " in follow set" << endl;
                 input_token = scan();
                 return;
             } else {
@@ -319,11 +324,11 @@ bin_op* relation() {
         while ((input_token = scan())) {
             // recover
             if (find(first_R.begin(), first_R.end(), input_token) != first_R.end()) {
-                cerr << "first: in lineno: " << lineno << ", token: " << token_image << endl;
+                cerr << "lineno: " << lineno << ", token: " << token_image << " in first set" << endl;
                 expr(binary_op);
                 return binary_op;
             } else if (find(follow_R.begin(), follow_R.end(), input_token) != follow_R.end()) {
-                cerr << "follow:  in lineno: " << lineno << ", token: " << token_image << endl;
+                cerr << "lineno: " << lineno << ", token: " << token_image << " in follow set" << endl;
                 return binary_op;
             } else {
                 cerr << "deleting token: " << token_image << ", error in lineno: " << lineno << endl;
@@ -352,20 +357,19 @@ void expr (bin_op* binary_op) {
                 throw ExpressionException();
         }
     } catch (ExpressionException& ee) {
-        cerr << ee.what() << ": error in line number: " << lineno << endl;
+        cerr << endl << ee.what() << ": error in line number: " << lineno << ", delete token: " << token_image << endl;
 
         while ((input_token = scan())) {
-
             // recover
             if (find(first_E.begin(), first_E.end(), input_token) != first_E.end()) {
-                cerr << "first: in lineno: " << lineno << ", token: " << names[input_token] << endl;
+                cerr << "lineno: " << lineno << ", token: " << token_image << " in first set" << endl;
                 expr(binary_op);
                 return;
             } else if (find(follow_E.begin(), follow_E.end(), input_token) != follow_E.end()) {
-                cerr << "follow:  in lineno: " << lineno << ", token: " << names[input_token] << endl;
+                cerr << "lineno: " << lineno << ", token: " << token_image << " in follow set" << endl;
                 return;
             } else {
-                cerr << "deleting token: " << names[input_token] << ", error in lineno: " << lineno << endl;
+                cerr << "deleting token: " << token_image << ", error in lineno: " << lineno << endl;
                 input_token = scan();
 
                 if (input_token == t_eof)
@@ -445,18 +449,18 @@ void term_tail (bin_op* binary_op, token context) {
         case t_do:
         case t_od:
         case t_check:
-            if (context == t_id) {
-                token specfic_token[] = { t_eq, t_noteq, t_gt, t_lt, t_gte, t_lte };
-                for (int i = 0; i < 8; i++) {
-                    if (specfic_token[i] == input_token)
-                        return;
-                }
-                throw ExpressionException();
-            }
-            else {
+//             if (context == t_id) {
+//                 token specfic_token[] = { t_eq, t_noteq, t_gt, t_lt, t_gte, t_lte };
+//                 for (int i = 0; i < 8; i++) {
+//                     if (specfic_token[i] == input_token)
+//                         return;
+//                 }
+//                 throw ExpressionException();
+//             }
+//             else {
                 PREDICT("predict term_tail --> epsilon" << endl);
                 break;          /*  epsilon production */
-            }
+            //}
         default:
             //cerr << "Deleting token: " << token_image << endl;
             throw ExpressionException();
@@ -491,18 +495,18 @@ void factor_tail (bin_op* binary_op, token context) {
         case t_do:
         case t_od:
         case t_check:
-            if (context == t_id) {
-                token specfic_token[] = { t_add, t_sub, t_eq, t_noteq, t_gt, t_lt, t_gte, t_lte };
-                for (int i = 0; i < 8; i++) {
-                    if (specfic_token[i] == input_token)
-                        return;
-                }
-                throw ExpressionException();
-            }
-            else {
+//             if (context == t_id) {
+//                 token specfic_token[] = { t_add, t_sub, t_eq, t_noteq, t_gt, t_lt, t_gte, t_lte };
+//                 for (int i = 0; i < 8; i++) {
+//                     if (specfic_token[i] == input_token)
+//                         return;
+//                 }
+//                 throw ExpressionException();
+//             }
+//             else {
                 PREDICT("predict factor_tail --> epsilon" << endl);
                 break;          /*  epsilon production */
-            }
+            //}
         default:
             //cerr << "Deleting token: " << token_image << endl;
             throw ExpressionException();
@@ -573,12 +577,6 @@ void factor (bin_op* binary_op, token context) {
 // if bin_op's type is not t_none
 // create a new node and swap it with the right node
 void add_or_create_swap_node(bin_op* binary_op, token tok) {
-
-    const char* print_names[] = {"read", "write", "id", "literal", "gets",
-                           "+", "-", "*", "/", "lparen", "rparen", "eof",
-                           "if", "fi", "do", "od", "check",
-                           "==", "<>", "<", ">", "<=", ">=", "none"};
-
     if (binary_op->type == t_none) {
         binary_op->type = tok;
         strcpy(binary_op->name, print_names[tok]);
