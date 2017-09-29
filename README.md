@@ -1,6 +1,20 @@
 # A2
 
 ### Error Detector
+- test from Michael's mail
+```
+sum := ( x x < yy )
+(program
+[ (:= "sum"Expression Exception: error in line number: 1
+follow:  in lineno: 1, token: lt
+Expression Exception: error in line number: 2
+deleting token: eof, error in lineno: 2
+
+match error in line: 2 , get eof, insert: rparen
+  (< (id "x") (id "yy")))
+]
+)
+```
 - test06
 ```
 read a read b read c write ( a * ( b + c
