@@ -34,15 +34,20 @@ set<int> follow_S(follow_S_, follow_S_ + sizeof(follow_S_) / sizeof(int));
 
 static const int first_R_[] = {t_lparen, t_id, t_literal};
 static const int follow_R_[] = {t_rparen, t_id, t_read, t_write, t_if, t_do, t_check, t_fi, t_od, t_eof};
-static const int ro_[] = {t_eq, t_noteq, t_lt, t_gt, t_lte, t_gte};
 set<int> first_R(first_R_, first_R_ + sizeof(first_R_) / sizeof(int));
 set<int> follow_R(follow_R_, follow_R_ + sizeof(follow_R_) / sizeof(int));
+
+static const int ro_[] = {t_eq, t_noteq, t_lt, t_gt, t_lte, t_gte};
+static const int ao_[] = {t_add, t_sub};
+static const int mo_[] = {t_mul, t_div};
 set<int> ro(ro_, ro_ + sizeof(ro_) / sizeof(int));
+set<int> ao(ao_, ao_ + sizeof(ao_) / sizeof(int));
+set<int> mo(mo_, mo_ + sizeof(mo_) / sizeof(int));
 
 static const int first_E_[] = {t_lparen, t_id, t_literal};
 set<int> first_E(first_E_, first_E_ + sizeof(first_E_) / sizeof(int));
 
-static const int follow_E_[] = {t_rparen, t_id, t_read, t_write, t_if, t_do, t_check, t_fi, t_od, t_eq, t_noteq, t_lt, t_gt, t_lte, t_gte};
+static const int follow_E_[] = {t_rparen, t_id, t_read, t_write, t_if, t_do, t_check, t_fi, t_od, t_eq, t_noteq, t_lt, t_gt, t_lte, t_gte, t_eof};
 set<int> follow_E(follow_E_, follow_E_ + sizeof(follow_E_) / sizeof(int));
 
 static const int starter_[] = {t_lparen, t_if, t_do};
@@ -97,10 +102,10 @@ static token input_token;
 
 bool EPS(const char* symbol) {
 	if (strcmp(symbol, "stmt_list") == 0
-		or strcmp(symbol, "expr_tail") == 0
-		or strcmp(symbol, "expr_tail") == 0
-		or strcmp(symbol, "term_tail") == 0
-		or strcmp(symbol, "factor_tail") == 0)
+		|| strcmp(symbol, "expr_tail") == 0
+		|| strcmp(symbol, "expr_tail") == 0
+		|| strcmp(symbol, "term_tail") == 0
+		|| strcmp(symbol, "factor_tail") == 0)
 		return true;
 	else
 		return false;
@@ -119,24 +124,36 @@ set<int> FIRST(const char* symbol) {
 	
 	if (strcmp(symbol, "stmt_list") == 0)
 		return first_S;
+
+	if (strcmp(symbol, "expr_tail") == 0)
+		return ro;
+	
+	if (strcmp(symbol, "term") == 0)
+		return first_R;
+
+	if (strcmp(symbol, "term_tail") == 0)
+		return ao;
+
+	if (strcmp(symbol, "factor") == 0)
+		return first_R;
+
+	if (strcmp(symbol, "factor_tail") == 0)
+		return mo;
 }
 
 void check_for_error(const char* symbol, set<int> follow_set) {
 	set<int> first_set = FIRST(symbol);
-	const bool is_in_first = first_set.find(input_token) != first_set.end();
-	const bool is_in_follow = follow_set.find(input_token) != follow_set.end();
-	const bool is_in_starter = starter.find(input_token) != starter.end();
 	
-	cout << symbol << ".." << names[input_token] << ", !(" << is_in_first << "|| (" << is_in_follow << "&&" << is_in_starter << ")\n";
-	
-	
-	if (!(is_in_first || (EPS(symbol) && is_in_follow))) {
-		cerr << "Context specific fawoeijfhvioc" << endl;
+	if (!(first_set.find(input_token) != first_set.end()
+		|| (EPS(symbol) && follow_set.find(input_token) != follow_set.end()))) {
+		cerr << endl << symbol << ".." << names[input_token] << " Context specific." << endl;
 		do {
+			cerr << "Delete token: " << names[input_token] << endl;
 			input_token = scan();
-		
-		} while(!(is_in_follow or is_in_first or is_in_starter));
 
+		} while (!(first_set.find(input_token) != first_set.end()
+				|| follow_set.find(input_token) != follow_set.end()
+				|| starter.find(input_token) != starter.end())); 
 	}
 
 }
@@ -464,7 +481,9 @@ void expr (bin_op* binary_op) {
 }
 
 void expr_tail(bin_op* binary_op) {
-    switch (input_token) {
+    
+	check_for_error(__FUNCTION__, follow_R);
+	switch (input_token) {
         case t_eq:
         case t_noteq:
         case t_lt:
@@ -494,7 +513,10 @@ void expr_tail(bin_op* binary_op) {
 }
 
 void term (bin_op* binary_op, token context) {
-    switch (input_token) {
+    set<int> follow_set = follow_E;
+	follow_set.insert(ao.begin(), ao.end());
+	check_for_error(__FUNCTION__, follow_set);
+	switch (input_token) {
         case t_id:
         case t_literal:
         case t_lparen:
@@ -509,6 +531,7 @@ void term (bin_op* binary_op, token context) {
 }
 
 void term_tail (bin_op* binary_op, token context) {
+	check_for_error(__FUNCTION__, follow_E);
     switch (input_token) {
         case t_add:
         case t_sub:
@@ -552,6 +575,9 @@ void term_tail (bin_op* binary_op, token context) {
 }
 
 void factor_tail (bin_op* binary_op, token context) {
+    set<int> follow_set = follow_E;
+	follow_set.insert(ao.begin(), ao.end());
+	check_for_error(__FUNCTION__, follow_set);
     switch (input_token) {
         case t_mul:
         case t_div:
@@ -611,6 +637,11 @@ void add_child_to_null_node(bin_op* root, bin_op *child) {
 
 void factor (bin_op* binary_op, token context) {
     bin_op* child;
+    
+	set<int> follow_set = follow_E;
+	follow_set.insert(ao.begin(), ao.end());
+	follow_set.insert(mo.begin(), mo.end());
+	check_for_error(__FUNCTION__, follow_set);
 
     switch (input_token) {
         case t_id :
