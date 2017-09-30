@@ -54,9 +54,7 @@ set<int> follow_E(follow_E_, follow_E_ + sizeof(follow_E_) / sizeof(int));
 static const int starter_[] = {t_lparen, t_if, t_do};
 set<int> starter(starter_, starter_ + sizeof(starter_) / sizeof(int));
 
-queue< set<int> > followR_factor_tail;
-queue< set<int> > followR_expr_tail;
-queue< set<int> > followR_term_tail;
+queue<set<int>> follow_for_factor_tail;
 
 //set<int> first_F = first_E;
 //static const int follow_F_[] = {t_rparen, t_id, t_read, t_write, t_if, t_do, t_check, t_fi, t_od, t_eq, t_noteq, t_lt, t_gt, t_lte, t_gte, t_mul, t_div, t_add, t_sub};
@@ -191,7 +189,7 @@ void match (token expected, bool print) {
 void program ();
 void stmt_list ();
 void stmt ();
-bin_op* relation ();
+bin_op* relation (set<int>);
 void expr (bin_op*);
 void expr_tail(bin_op*);
 void term (bin_op*, token c);
@@ -227,11 +225,11 @@ void program () {
 }
 
 void stmt_list () {
-//	set<int> follow_set;
-//	follow_set.insert(t_eof);
-//	follow_set.insert(t_fi);
-//	follow_set.insert(t_od);
-//	check_for_error(__FUNCTION__, follow_set);
+	set<int> follow_set;
+	follow_set.insert(t_eof);
+	follow_set.insert(t_fi);
+	follow_set.insert(t_od);
+	check_for_error(__FUNCTION__, follow_set);
 	
 	try{
 		switch (input_token) {
@@ -285,11 +283,11 @@ void stmt_list () {
 
 void stmt () {
     bin_op* root;
-//	check_for_error(__FUNCTION__, follow_S);
+	check_for_error(__FUNCTION__, follow_S);
     try {
 		
 		set<int> follow_set = FIRST("stmt_list");
-		//follow_set.insert(t_fi);
+		follow_set.insert(t_fi);
 		switch (input_token) {
 			case t_id:
                 PREDICT("predict stmt --> id gets expr" << endl);
@@ -299,11 +297,7 @@ void stmt () {
                 AST("\"");
                 match (t_gets, false);
                 // the bracket only show while there is more than one child
-                
-				followR_factor_tail.push(follow_S);
-				followR_expr_tail.push(follow_S);
-				followR_term_tail.push(follow_S);
-				print_relation(relation()); 
+                print_relation(relation (follow_S));
                 break;
             case t_read:
                 PREDICT("predict stmt --> read id" << endl);
@@ -317,21 +311,14 @@ void stmt () {
                 PREDICT("predict stmt --> write relation" << endl);
                 match (t_write, false);
                 AST("write");
-
-				followR_factor_tail.push(follow_S);
-				followR_expr_tail.push(follow_S);
-				followR_term_tail.push(follow_S);
-                print_relation(relation());
+                print_relation(relation (follow_S));
                 break;
             case t_if:
                 PREDICT("predict stmt --> if R SL fi" << endl);
                 match (t_if, false);
                 AST("if\n");
-				
-				//followR_factor_tail.push(follow_set);
-				//followR_term_tail.push(follow_set);
-				followR_expr_tail.push(follow_set);
-                print_relation(relation());
+
+                print_relation(relation (follow_set));
                 AST(endl << "[ ");
                 stmt_list ();
                 AST("]" << endl);
@@ -350,9 +337,7 @@ void stmt () {
                 PREDICT("predict stmt --> check R" << endl);
                 match (t_check, false);
                 AST("check");
-
-				followR_expr_tail.push(follow_S);
-                print_relation(relation());
+                print_relation(relation (follow_S));
                 break;
             default:
                 cerr << "Deleting token: " << token_image << endl;
@@ -420,12 +405,13 @@ void print_relation(bin_op* root) {
 }
 
 // init with null binary_op and return filled binary_op
-bin_op* relation() {
+bin_op* relation(set<int> follow_set) {
     bin_op* binary_op = (bin_op*) malloc(sizeof(bin_op));
     binary_op->type = t_none;
     binary_op->l_child = NULL;
     binary_op->r_child = NULL;
 
+	follow_for_factor_tail.push(follow_set);
 	//check_for_error(__FUNCTION__, follow_set);
     try {
         switch (input_token) {
@@ -505,11 +491,8 @@ void expr (bin_op* binary_op) {
 }
 
 void expr_tail(bin_op* binary_op) {
-	if (!followR_expr_tail.empty()) {
-		set<int> follow_set = followR_expr_tail.front();
-		followR_expr_tail.pop();
-		check_for_error(__FUNCTION__, follow_set);
-	}
+    
+	check_for_error(__FUNCTION__, follow_R);
 	switch (input_token) {
         case t_eq:
         case t_noteq:
@@ -558,11 +541,7 @@ void term (bin_op* binary_op, token context) {
 }
 
 void term_tail (bin_op* binary_op, token context) {
-	if (!followR_term_tail.empty()) {
-		set<int> follow_set = followR_term_tail.front();
-		followR_term_tail.pop();
-		check_for_error(__FUNCTION__, follow_set);
-	}
+	check_for_error(__FUNCTION__, follow_E);
     switch (input_token) {
         case t_add:
         case t_sub:
@@ -606,13 +585,9 @@ void term_tail (bin_op* binary_op, token context) {
 }
 
 void factor_tail (bin_op* binary_op, token context) {
-	if (!followR_factor_tail.empty()) {
-		set<int> follow_set = followR_factor_tail.front();
-		//cout << "\nNow the size is " << followR_factor_tail.size() << endl;
-		//for (set<int>::iterator it = follow_set.begin(); it != follow_set.end(); it++)
-		//	cout << names[*it] << "\t";
-		cout << endl;
-		followR_factor_tail.pop();
+	if (!follow_for_factor_tail.empty()) {
+		set<int> follow_set = follow_for_factor_tail.front();
+		follow_for_factor_tail.pop();
 		check_for_error(__FUNCTION__, follow_set);
 	}
     switch (input_token) {
@@ -714,8 +689,8 @@ void factor (bin_op* binary_op, token context) {
         case t_lparen:
             PREDICT("predict factor --> lparen expr rparen" << endl);
             match (t_lparen, false);
-			followR_factor_tail.push(single_rparen);	
-            child = relation ();
+			follow_for_factor_tail.push(single_rparen);	
+            child = relation (single_rparen);
 
             // find null child
             add_child_to_null_node(binary_op, child);
