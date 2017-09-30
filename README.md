@@ -63,11 +63,14 @@ first: in lineno: 1, token: a
     - [ ] testXX.txt as the code of calculator language
     - [ ] outputXX.txt as the output AST for the correspondent testXX.txt
 - [X] Extend the language with if and do/check statements
-- [X] Implement exception-based syntax error recovery, as described in Section 2.3.5 on the textbook’s companion site. At the least, you should attach handlers to statements, relations, and expressions.
+- [X] Implement exception-based syntax error recovery, as described in Section 2.3.5 on the textbook’s companion site.
+At the least, you should attach handlers to statements, relations, and expressions.
 - [X] Output a syntax tree with the structure suggested
     - [X] Build an abstract syntax tree
     - [X] Order of operator
     - [X] Shows bracket in R if more than one child
+- [X] Implement a static semantic check to ensure that every check statement appears inside a do statement, and every
+do statement has at least one check statement that is inside it and not inside any nested do. 
 
 ### Extended Grammar
 - Here the new nonterminal R is meant to suggest a “relation.”  As in C, a value of 0 is taken to be false; anything else is true.
