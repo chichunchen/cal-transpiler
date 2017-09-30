@@ -103,7 +103,6 @@ static token input_token;
 bool EPS(const char* symbol) {
 	if (strcmp(symbol, "stmt_list") == 0
 		|| strcmp(symbol, "expr_tail") == 0
-		|| strcmp(symbol, "expr_tail") == 0
 		|| strcmp(symbol, "term_tail") == 0
 		|| strcmp(symbol, "factor_tail") == 0)
 		return true;
@@ -224,6 +223,8 @@ void program () {
 void stmt_list () {
 	set<int> follow_set;
 	follow_set.insert(t_eof);
+	follow_set.insert(t_fi);
+	follow_set.insert(t_od);
 	check_for_error(__FUNCTION__, follow_set);
 	
 	try{
@@ -243,8 +244,8 @@ void stmt_list () {
 				break;
 				/* Follow(stmt_list) has (Follow(stmt) and Follow(R)) */
 			case t_eof:
-//			case t_fi:
-//			case t_od:
+			case t_fi:
+			case t_od:
 				PREDICT("predict stmt_list --> epsilon" << endl);
 				break;          /*  epsilon production */
 			default:
@@ -440,7 +441,7 @@ bin_op* relation() {
     return binary_op;
 }
 
-void expr (bin_op* binary_op) {      //Need to add extra param for context specific. (expr, rel, stmt_list,term, term_tail,factor, factor_tail).
+void expr (bin_op* binary_op) {    
 	
 	check_for_error(__FUNCTION__, follow_E);
 	try {
