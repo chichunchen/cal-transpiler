@@ -2,6 +2,9 @@
     Michael L. Scott, 2008-2017.
 */
 
+#ifndef __SCAN_H
+#define __SCAN_H
+
 enum token {
     t_read, t_write, t_id, t_literal, t_gets,
     t_add, t_sub, t_mul, t_div, t_lparen, t_rparen, t_eof,
@@ -16,3 +19,4 @@ extern token get_next_token();
 
 extern int lineno;
 
+#endif
