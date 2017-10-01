@@ -288,8 +288,15 @@ void stmt () {
 //	check_for_error(__FUNCTION__, follow_S);
     try {
 		
-		set<int> follow_set = FIRST("stmt_list");
+		//set<int> follow_set = FIRST("stmt_list");
 		//follow_set.insert(t_fi);
+		set<int> follow_set = follow_S;
+		follow_set.insert(t_rparen);
+		followR_expr_tail.push(follow_set);
+		follow_set.insert(ro.begin(), ro.end());
+		followR_term_tail.push(follow_set);
+		follow_set.insert(ao.begin(), ao.end());
+		followR_factor_tail.push(follow_set);
 		switch (input_token) {
 			case t_id:
                 PREDICT("predict stmt --> id gets expr" << endl);
@@ -300,9 +307,9 @@ void stmt () {
                 match (t_gets, false);
                 // the bracket only show while there is more than one child
                 
-				followR_factor_tail.push(follow_S);
-				followR_expr_tail.push(follow_S);
-				followR_term_tail.push(follow_S);
+//				followR_factor_tail.push(follow_S);
+//				followR_expr_tail.push(follow_S);
+//				followR_term_tail.push(follow_S);
 				print_relation(relation()); 
                 break;
             case t_read:
@@ -318,9 +325,9 @@ void stmt () {
                 match (t_write, false);
                 AST("write");
 
-				followR_factor_tail.push(follow_S);
-				followR_expr_tail.push(follow_S);
-				followR_term_tail.push(follow_S);
+//				followR_factor_tail.push(follow_S);
+//				followR_expr_tail.push(follow_S);
+//				followR_term_tail.push(follow_S);
                 print_relation(relation());
                 break;
             case t_if:
@@ -328,9 +335,9 @@ void stmt () {
                 match (t_if, false);
                 AST("if\n");
 				
-				//followR_factor_tail.push(follow_set);
-				//followR_term_tail.push(follow_set);
-				followR_expr_tail.push(follow_set);
+//				followR_factor_tail.push(follow_set);
+//				followR_term_tail.push(follow_set);
+//				followR_expr_tail.push(follow_set);
                 print_relation(relation());
                 AST(endl << "[ ");
                 stmt_list ();
@@ -350,8 +357,9 @@ void stmt () {
                 PREDICT("predict stmt --> check R" << endl);
                 match (t_check, false);
                 AST("check");
-
-				followR_expr_tail.push(follow_S);
+//				followR_term_tail.push(follow_S);
+//				followR_expr_tail.push(follow_S);
+//				followR_factor_tail.push(follow_S);
                 print_relation(relation());
                 break;
             default:
