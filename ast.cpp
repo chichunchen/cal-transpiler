@@ -58,48 +58,48 @@ void print_stmt_list(st_list* root) {
 void print_relation(bin_op* root) {
     if (root->l_child != NULL && root->r_child != NULL) {
         AST(" (");
-//        cout << " (";
+        cout << " (";
     }
 
     if (root) {
         if (root->type == t_id) {
-//            cout << "(id \"";
-//            cout << root->name;
-//            cout << "\")";
+            cout << "(id \"";
+            cout << root->name;
+            cout << "\")";
             AST("(id \"");
             AST(root->name);
             AST("\")");
         }
         else if (root->type == t_literal) {
-//            cout << "(num \"";
-//            cout << root->name;
-//            cout << "\")";
+            cout << "(num \"";
+            cout << root->name;
+            cout << "\")";
             AST("(num \"");
             AST(root->name);
             AST("\")");
         }
         else {
             // print op
-//            cout << root->name;
+            cout << root->name;
             AST(root->name);
         }
     }
 
     if (root->l_child) {
-//        cout << " ";
+        cout << " ";
         AST(" ");
         print_relation(root->l_child);
     }
 
     if (root->r_child) {
-//        cout << " ";
+        cout << " ";
         AST(" ");
         print_relation(root->r_child);
     }
 
     if (root->l_child != NULL && root->r_child != NULL) {
         AST(")");
-//        cout << ")";
+        cout << ")";
     }
 }
 

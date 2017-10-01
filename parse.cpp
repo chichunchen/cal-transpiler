@@ -142,7 +142,7 @@ void check_for_error(const char* symbol, set<int> follow_set) {
 
     if (!(first_set.find(input_token) != first_set.end()
           || (EPS(symbol) && follow_set.find(input_token) != follow_set.end()))) {
-        cerr << "\nError at " << symbol << " at line: " << lineno << ", using context specific follow to settle." << endl;
+        cerr << "\nError at " << symbol << " around line: " << lineno << ", using context specific follow to settle." << endl;
         do {
             cerr << "Delete token: " << names[input_token] << endl;
             input_token = scan();
@@ -157,7 +157,7 @@ void check_for_error(const char* symbol, set<int> follow_set) {
 
 
 void error () {
-    cerr << "syntax error at line: " << lineno << endl;
+    cerr << "syntax error around line: " << lineno << endl;
     exit (1);
 }
 
@@ -175,7 +175,7 @@ void match (token expected, bool print) {
     }
     else {
         cerr << endl;
-        cerr << "match error in line: " << lineno << " , get " << names[input_token] <<
+        cerr << "match error around line: " << lineno << " , get " << names[input_token] <<
                 ", insert: " << names[expected] << endl;
         return;
     }
@@ -292,7 +292,7 @@ st* stmt () {
 
                 rel = relation(follow_set);
                 //AST
-                print_relation(rel);
+                //print_relation(rel);
 
                 statement->type = t_id;
                 statement->rel = rel;
@@ -319,7 +319,7 @@ st* stmt () {
                 follow_set = follow_S;
 
                 rel = relation(follow_set);
-                print_relation(rel);
+                //print_relation(rel);
 
                 statement->type = t_write;
                 statement->rel = rel;
@@ -336,7 +336,7 @@ st* stmt () {
 
                 AST("]" << endl);
                 rel = relation(follow_set);
-                print_relation(rel);
+                //print_relation(rel);
                 AST(endl << "[ ");
 
                 sl_root = (st_list*) malloc(sizeof(st_list));
@@ -375,7 +375,7 @@ st* stmt () {
                 follow_set = follow_S;
 
                 rel = relation(follow_set);
-                print_relation(rel);
+                //print_relation(rel);
 
                 statement->type = t_check;
                 statement->rel = rel;
@@ -393,16 +393,16 @@ st* stmt () {
         while ((input_token = scan())) {
             // recover
             if (find(first_S.begin(), first_S.end(), input_token) != first_S.end()) {
-                cerr << "lineno: " << lineno << ", token: " << token_image << " in first set" << endl;
+                //cerr << "line: " << lineno << ", token: " << token_image << " in first set" << endl;
                 stmt();
                 input_token = scan();
                 return statement;
             } else if (find(follow_S.begin(), follow_S.end(), input_token) != follow_S.end()) {
-                cerr << "lineno: " << lineno << ", token: " << token_image << " in follow set" << endl;
+                //cerr << "line: " << lineno << ", token: " << token_image << " in follow set" << endl;
                 input_token = scan();
                 return statement;
             } else {
-                cerr << "deleting token: " << token_image << ", error in lineno: " << lineno << endl;
+                cerr << "deleting token: " << token_image << ", error around line: " << lineno << endl;
                 input_token = scan();
 
                 if (input_token == t_eof)
@@ -439,14 +439,14 @@ bin_op* relation(set<int> follow_set) {
         while ((input_token = scan())) {
             // recover
             if (find(first_R.begin(), first_R.end(), input_token) != first_R.end()) {
-                cerr << "lineno: " << lineno << ", token: " << token_image << " in first set" << endl;
+                //cerr << "line: " << lineno << ", token: " << token_image << " in first set" << endl;
                 expr(binary_op, follow_set);
                 return binary_op;
             } else if (find(follow_R.begin(), follow_R.end(), input_token) != follow_R.end()) {
-                cerr << "lineno: " << lineno << ", token: " << token_image << " in follow set" << endl;
+                //cerr << "line: " << lineno << ", token: " << token_image << " in follow set" << endl;
                 return binary_op;
             } else {
-                cerr << "deleting token: " << token_image << ", error in lineno: " << lineno << endl;
+                cerr << "deleting token: " << token_image << ", error around line: " << lineno << endl;
                 input_token = scan();
 
                 if (input_token == t_eof)
@@ -472,19 +472,19 @@ void expr (bin_op* binary_op, set<int> follow_set) {
                 throw ExpressionException();
         }
     } catch (ExpressionException& ee) {
-        cerr << endl << ee.what() << ": error in line number: " << lineno << ", delete token: " << token_image << endl;
+        cerr << endl << ee.what() << ": error around line number: " << lineno << ", delete token: " << token_image << endl;
 
         while ((input_token = scan())) {
             // recover
             if (find(first_E.begin(), first_E.end(), input_token) != first_E.end()) {
-                cerr << "lineno: " << lineno << ", token: " << token_image << " in first set" << endl;
+                //cerr << "line: " << lineno << ", token: " << token_image << " in first set" << endl;
                 expr(binary_op, follow_set);
                 return;
             } else if (find(follow_E.begin(), follow_E.end(), input_token) != follow_E.end()) {
-                cerr << "lineno: " << lineno << ", token: " << token_image << " in follow set" << endl;
+                //cerr << "line: " << lineno << ", token: " << token_image << " in follow set" << endl;
                 return;
             } else {
-                cerr << "deleting token: " << token_image << ", error in lineno: " << lineno << endl;
+                cerr << "deleting token: " << token_image << ", error around line: " << lineno << endl;
                 input_token = scan();
 
                 if (input_token == t_eof)
@@ -805,12 +805,12 @@ int main () {
     input_token = scan ();
     program ();
 
-//    print_program_ast(pg_sl_root);
+    print_program_ast(pg_sl_root);
 
-//    cout << endl << "[static semantic check]: test do has check" << endl;
-//    analysis_do_has_check(pg_sl_root);
-//    cout << "[static semantic check]: test check in do" << endl;
-//    analysis_check_in_do(pg_sl_root, false);
+    cout << endl << "[static semantic check]: test do has check" << endl;
+    analysis_do_has_check(pg_sl_root);
+    cout << "[static semantic check]: test check in do" << endl;
+    analysis_check_in_do(pg_sl_root, false);
 
     // c
 

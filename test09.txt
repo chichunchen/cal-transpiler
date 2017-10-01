@@ -1,1 +1,1 @@
-read a write ( a + 4 * 5 ) write 3
+read a write ( a + 4 * 5 ) write 3 3 3 3 3 3

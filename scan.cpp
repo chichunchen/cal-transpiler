@@ -68,7 +68,7 @@ token scan() {
                     token_image[2] = '\0';
 
                     cerr << endl;
-                    cerr << "line: " << lineno << ", expect: := , get: :" << char(c) << endl;
+                    cerr << "Around line: " << lineno << ", expect: := , get: :" << char(c) << endl;
                     return t_none;
                 } else {
                     c = lineno_get();
@@ -113,7 +113,7 @@ token scan() {
                     token_image[1] = c;
                     token_image[2] = '\0';
                     cerr << endl;
-                    cerr << "line: " << lineno << ", expect: == , get: =" << char(c) << endl;
+                    cerr << "Around line: " << lineno << ", expect: == , get: =" << char(c) << endl;
                     return t_none;
                 } else {
                     token_image[1] = '=';
@@ -142,7 +142,7 @@ token scan() {
                     token_image[1] = c;
                     token_image[2] = '\0';
                     cerr << endl;
-                    cerr << "line: " << lineno << ", expect: <= or <> , get: <" << char(c) << endl;
+                    cerr << "Around line: " << lineno << ", expect: <= or <> , get: <" << char(c) << endl;
                     return t_none;
                 }
             case '>':
@@ -161,14 +161,14 @@ token scan() {
                     token_image[1] = c;
                     token_image[2] = '\0';
                     cerr << endl;
-                    cerr << "line: " << lineno << ", expect: >= , get: >" << char(c) << endl;
+                    cerr << "Around line: " << lineno << ", expect: >= , get: >" << char(c) << endl;
                     return t_none;
                 }
             default:
                 token_image[0] = c;
                 token_image[1] = '\0';
                 cerr << endl;
-                cerr << "line: " << lineno << ", get: " << char(c) << endl;
+                cerr << "Around line: " << lineno << ", get: " << char(c) << endl;
                 return t_none;
         }
     }
