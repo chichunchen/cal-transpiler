@@ -20,11 +20,6 @@
 
 using namespace std;
 
-/*
- * ast structs
- */
-
-
 static const int first_S_[] = {t_id, t_read, t_write, t_if, t_do, t_check};
 static const int follow_S_[] = {t_id, t_read, t_write, t_if, t_do, t_fi, t_od, t_check, t_eof};
 set<int> first_S(first_S_, first_S_ + sizeof(first_S_) / sizeof(int));
@@ -92,6 +87,8 @@ const char* print_names[] = {"read", "write", "id", "literal", "gets",
 
 static token input_token;
 
+bool has_error = false;
+
 bool EPS(const char* symbol) {
     if (strcmp(symbol, "stmt_list") == 0
         || strcmp(symbol, "expr_tail") == 0
@@ -142,6 +139,7 @@ void check_for_error(const char* symbol, set<int> follow_set) {
 
     if (!(first_set.find(input_token) != first_set.end()
           || (EPS(symbol) && follow_set.find(input_token) != follow_set.end()))) {
+        has_error = true;
         cerr << "\nError at " << symbol << " around line: " << lineno << ", using context specific follow to settle." << endl;
         do {
             cerr << "Delete token: " << names[input_token] << endl;
@@ -174,6 +172,7 @@ void match (token expected, bool print) {
         input_token = scan ();
     }
     else {
+        has_error = true;
         cerr << endl;
         cerr << "match error around line: " << lineno << " , get " << names[input_token] <<
                 ", insert: " << names[expected] << endl;
@@ -389,6 +388,7 @@ st* stmt () {
         }
     } catch (StatementException se) {
         cerr << se.what() << " " << token_image << " , line number: " << lineno << endl;
+        has_error = true;
 
         while ((input_token = scan())) {
             // recover
@@ -435,6 +435,7 @@ bin_op* relation(set<int> follow_set) {
         }
     } catch (RelationException &re) {
         cerr << re.what() << " , line number: " << lineno << endl;
+        has_error = true;
 
         while ((input_token = scan())) {
             // recover
@@ -473,6 +474,7 @@ void expr (bin_op* binary_op, set<int> follow_set) {
         }
     } catch (ExpressionException& ee) {
         cerr << endl << ee.what() << ": error around line number: " << lineno << ", delete token: " << token_image << endl;
+        has_error = true;
 
         while ((input_token = scan())) {
             // recover
@@ -805,7 +807,9 @@ int main () {
     input_token = scan ();
     program ();
 
-    print_program_ast(pg_sl_root);
+    if (!has_error) {
+        print_program_ast(pg_sl_root);
+    }
 
     cout << endl << "[static semantic check]: test do has check" << endl;
     analysis_do_has_check(pg_sl_root);
