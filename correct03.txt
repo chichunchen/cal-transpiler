@@ -1,0 +1,10 @@
+(program
+[ (read "A")
+(read "B")
+(:= "sum" (/  (+ (id "A") (id "B")) (num "2")))
+(write  (id "sum"))
+(write  (/ (id "sum") (num "2")))
+] 
+) 
+[static semantic check]: test do has check
+[static semantic check]: test check in do

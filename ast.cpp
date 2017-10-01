@@ -29,7 +29,7 @@ void print_stmt_list(st_list* root) {
             case t_do:
                 cout << "do" << endl;
 
-                cout << "[" << endl;
+                cout << "[";
                 print_stmt_list(root->l_child->sl);
                 cout << "]" << endl;
                 break;
@@ -37,7 +37,8 @@ void print_stmt_list(st_list* root) {
                 cout << "if " << endl;
                 print_relation(root->l_child->rel);
 
-                cout << "[" << endl;
+                cout << endl;
+                cout << "[";
                 print_stmt_list(root->l_child->sl);
                 cout << "]" << endl;
                 break;

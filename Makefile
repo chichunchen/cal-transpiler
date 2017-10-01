@@ -14,12 +14,15 @@ clean:
 
 test01:
 	./parse < test01.txt > output01.txt
+	diff --ignore-all-space correct01.txt output01.txt
 
 test02:
 	./parse < test02.txt > output02.txt
+	diff --ignore-all-space correct02.txt output02.txt
 
 test03:
 	./parse < test03.txt > output03.txt
+	diff --ignore-all-space correct03.txt output03.txt
 
 test04:
 	./parse < test04.txt > output04.txt

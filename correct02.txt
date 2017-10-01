@@ -1,0 +1,26 @@
+(program
+[ (do
+[(check  (> (id "n") (num "0")))
+(:= "found" (num "0"))
+(:= "cf1" (num "2"))
+(:= "cf1s" (* (id "cf1") (id "cf1")))
+(if 
+ (== (id "pr") (id "cp"))
+[(:= "found" (num "1"))
+(:= "cp1" (+ (num "1") (num "1")))
+(if 
+ (== (num "1") (num "1"))
+[(:= "c" (num "0"))
+]
+)
+]
+)
+]
+)
+(read "a")
+] 
+) 
+[static semantic check]: test do has check
+do [1] has check in it
+[static semantic check]: test check in do
+check [1] is in do

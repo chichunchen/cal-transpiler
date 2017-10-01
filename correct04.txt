@@ -2,19 +2,19 @@
 [ (read "n")
 (:= "cp" (num "2"))
 (do
-[ (check > (id "n") (num "0"))
+[(check  (> (id "n") (num "0")))
 (:= "found" (num "0"))
 (:= "cf1" (num "2"))
 (:= "cf1s" (* (id "cf1") (id "cf1")))
 (do
-[ (check <= (id "cf1s") (id "cp"))
+[(check  (<= (id "cf1s") (id "cp")))
 (:= "cf2" (num "2"))
 (:= "pr" (* (id "cf1") (id "cf2")))
 (do
-[ (check <= (id "pr") (id "cp"))
-(if
-(== (id "pr") (id "cp"))
-[ (:= "found" (num "1"))
+[(check  (<= (id "pr") (id "cp")))
+(if 
+ (== (id "pr") (id "cp"))
+[(:= "found" (num "1"))
 ]
 )
 (:= "cf2" (+ (id "cf2") (num "1")))
@@ -25,14 +25,22 @@
 (:= "cf1s" (* (id "cf1") (id "cf1")))
 ]
 )
-(if
-(== (id "found") (num "0"))
-[ (write (id "cp"))
+(if 
+ (== (id "found") (num "0"))
+[(write  (id "cp"))
 (:= "n" (- (id "n") (num "1")))
 ]
 )
 (:= "cp" (+ (id "cp") (num "1")))
 ]
 )
-]
-)
+] 
+) 
+[static semantic check]: test do has check
+do [1] has check in it
+do [2] has check in it
+do [3] has check in it
+[static semantic check]: test check in do
+check [1] is in do
+check [2] is in do
+check [3] is in do

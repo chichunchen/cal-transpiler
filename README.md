@@ -1,5 +1,18 @@
 # A2
 
+### Tests
+Makefile test the output of ast and static semantic check.
+```
+./parse < test01.txt > output01.txt                                                      │
+diff --ignore-all-space correct01.txt output01.txt                                       │
+./parse < test02.txt > output02.txt                                                      │
+diff --ignore-all-space correct02.txt output02.txt                                       │
+./parse < test03.txt > output03.txt                                                      │
+diff --ignore-all-space correct03.txt output03.txt                                       │
+./parse < test04.txt > output04.txt                                                      │
+diff --ignore-all-space correct04.txt output04.txt
+```
+
 ### Error Detector
 - test from Michael's mail
 ```

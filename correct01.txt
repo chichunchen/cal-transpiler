@@ -1,0 +1,6 @@
+(program
+[ (read "A")
+] 
+) 
+[static semantic check]: test do has check
+[static semantic check]: test check in do
