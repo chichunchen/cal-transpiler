@@ -71,6 +71,7 @@ At the least, you should attach handlers to statements, relations, and expressio
     - [X] Shows bracket in R if more than one child
 - [X] Implement a static semantic check to ensure that every check statement appears inside a do statement, and every
 do statement has at least one check statement that is inside it and not inside any nested do. 
+- [X] Translate to C
 
 ### Extended Grammar
 - Here the new nonterminal R is meant to suggest a “relation.”  As in C, a value of 0 is taken to be false; anything else is true.

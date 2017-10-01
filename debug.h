@@ -3,7 +3,7 @@
 
 #define NPREDICT
 //#define NDEBUG
-#define NAST
+//#define NAST
 
 #ifdef NDEBUG
 #define DEBUG(x)

@@ -11,6 +11,7 @@
 #include <stdio.h>
 #include <vector>
 #include <algorithm>
+#include <set>
 
 #include "scan.h"
 #include "ast.h"
@@ -25,25 +26,30 @@ using namespace std;
 
 
 static const int first_S_[] = {t_id, t_read, t_write, t_if, t_do, t_check};
-static const int follow_S_[] = {t_id, t_read, t_write, t_if, t_do, t_check, t_eof};
-vector<int> first_S(first_S_, first_S_ + sizeof(first_S_) / sizeof(int));
-vector<int> follow_S(follow_S_, follow_S_ + sizeof(follow_S_) / sizeof(int));
+static const int follow_S_[] = {t_id, t_read, t_write, t_if, t_do, t_fi, t_od, t_check, t_eof};
+set<int> first_S(first_S_, first_S_ + sizeof(first_S_) / sizeof(int));
+set<int> follow_S(follow_S_, follow_S_ + sizeof(follow_S_) / sizeof(int));
 
 static const int first_R_[] = {t_lparen, t_id, t_literal};
-static const int follow_R_[] = {t_rparen, t_id, t_read, t_write, t_if, t_do, t_check, t_fi, t_od};
-static const int ro[] = {t_eq, t_noteq, t_lt, t_gt, t_lte, t_gte};
-vector<int> first_R(first_R_, first_R_ + sizeof(first_R_) / sizeof(int));
-vector<int> follow_R(follow_R_, follow_R_ + sizeof(follow_R_) / sizeof(int));
+static const int follow_R_[] = {t_rparen, t_id, t_read, t_write, t_if, t_do, t_check, t_fi, t_od, t_eof};
+set<int> first_R(first_R_, first_R_ + sizeof(first_R_) / sizeof(int));
+set<int> follow_R(follow_R_, follow_R_ + sizeof(follow_R_) / sizeof(int));
+
+static const int ro_[] = {t_eq, t_noteq, t_lt, t_gt, t_lte, t_gte};
+static const int ao_[] = {t_add, t_sub};
+static const int mo_[] = {t_mul, t_div};
+set<int> ro(ro_, ro_ + sizeof(ro_) / sizeof(int));
+set<int> ao(ao_, ao_ + sizeof(ao_) / sizeof(int));
+set<int> mo(mo_, mo_ + sizeof(mo_) / sizeof(int));
 
 static const int first_E_[] = {t_lparen, t_id, t_literal};
-vector<int> first_E(first_E_, first_E_ + sizeof(first_E_) / sizeof(int));
+set<int> first_E(first_E_, first_E_ + sizeof(first_E_) / sizeof(int));
 
-static const int follow_E_[] = {t_rparen, t_id, t_read, t_write, t_if, t_do, t_check, t_fi, t_od, t_eq, t_noteq, t_lt, t_gt, t_lte, t_gte};
-vector<int> follow_E(follow_E_, follow_E_ + sizeof(follow_E_) / sizeof(int));
+static const int follow_E_[] = {t_rparen, t_id, t_read, t_write, t_if, t_do, t_check, t_fi, t_od, t_eq, t_noteq, t_lt, t_gt, t_lte, t_gte, t_eof};
+set<int> follow_E(follow_E_, follow_E_ + sizeof(follow_E_) / sizeof(int));
 
-//vector<int> first_F = first_E;
-//static const int follow_F_[] = {t_rparen, t_id, t_read, t_write, t_if, t_do, t_check, t_fi, t_od, t_eq, t_noteq, t_lt, t_gt, t_lte, t_gte, t_mul, t_div, t_add, t_sub};
-//vector<int> follow_F(follow_F_, follow_F_ + sizeof(follow_F_) / sizeof(int));
+static const int starter_[] = {t_lparen, t_if, t_do};
+set<int> starter(starter_, starter_ + sizeof(starter_) / sizeof(int));
 
 enum Context {
     c_stmt_list, c_stmt, c_rel, c_expr, c_expr_tail, c_term, c_term_tail, c_factor, c_factor_tail,
@@ -86,6 +92,70 @@ const char* print_names[] = {"read", "write", "id", "literal", "gets",
 
 static token input_token;
 
+bool EPS(const char* symbol) {
+    if (strcmp(symbol, "stmt_list") == 0
+        || strcmp(symbol, "expr_tail") == 0
+        || strcmp(symbol, "term_tail") == 0
+        || strcmp(symbol, "factor_tail") == 0)
+        return true;
+    else
+        return false;
+}
+
+set<int> FIRST(const char* symbol) {
+
+    if (strcmp(symbol, "stmt") == 0)
+        return first_S;
+
+    if (strcmp(symbol, "relation") == 0)
+        return first_R;
+
+    if (strcmp(symbol, "expr") == 0)
+        return first_R;
+
+    if (strcmp(symbol, "stmt_list") == 0)
+        return first_S;
+
+    if (strcmp(symbol, "expr_tail") == 0)
+        return ro;
+
+    if (strcmp(symbol, "term") == 0)
+        return first_R;
+
+    if (strcmp(symbol, "term_tail") == 0)
+        return ao;
+
+    if (strcmp(symbol, "factor") == 0)
+        return first_R;
+
+    if (strcmp(symbol, "factor_tail") == 0)
+        return mo;
+}
+
+void check_for_error(const char* symbol, set<int> follow_set) {
+    set<int> first_set = FIRST(symbol);
+
+//    for (set<int>::iterator it = follow_set.begin(); it != follow_set.end(); it++) {
+//        cout << names[*it] << ", ";
+//    }
+//    cout << endl;
+
+    if (!(first_set.find(input_token) != first_set.end()
+          || (EPS(symbol) && follow_set.find(input_token) != follow_set.end()))) {
+        cerr << "\nError at " << symbol << " at line: " << lineno << ", using context specific follow to settle." << endl;
+        do {
+            cerr << "Delete token: " << names[input_token] << endl;
+            input_token = scan();
+
+        } while (!(first_set.find(input_token) != first_set.end()
+                   || follow_set.find(input_token) != follow_set.end()
+                   || starter.find(input_token) != starter.end()
+                   || input_token == t_eof));
+    }
+
+}
+
+
 void error () {
     cerr << "syntax error at line: " << lineno << endl;
     exit (1);
@@ -114,16 +184,18 @@ void match (token expected, bool print) {
 void program ();
 st_list* stmt_list (st_list* stList);
 st* stmt ();
-bin_op* relation ();
-void expr (bin_op*);
-void expr_tail(bin_op*);
-void term (bin_op*, token c);
-void term_tail (bin_op*, token c);
-void factor_tail (bin_op*, token c);
-void factor (bin_op*, token c);
+bin_op* relation (set<int>);
+void expr (bin_op*a, set<int>);
+void expr_tail(bin_op*, set<int>);
+void term (bin_op*, set<int>);
+void term_tail (bin_op*, set<int>);
+void factor_tail (bin_op*, set<int>);
+void factor (bin_op*, set<int>);
 void relation_op(bin_op*);
 void add_op (bin_op*);
 void mul_op (bin_op*);
+
+void add_or_create_swap_node(bin_op* binary_op, token tok);
 
 st_list* pg_sl_root;
 
@@ -131,6 +203,8 @@ void program () {
     pg_sl_root = (st_list*) malloc(sizeof(st_list));
     pg_sl_root->l_child = NULL;
     pg_sl_root->r_child = NULL;
+
+    AST("(program" << endl);
 
     switch (input_token) {
         /* First(program) */
@@ -142,13 +216,14 @@ void program () {
         case t_check:
         case t_eof:
             PREDICT("predict program --> stmt_list eof" << endl);
+            AST("[ ");
             stmt_list (pg_sl_root);
+            AST("] ");
             match (t_eof, false);
             break;
         default: error ();
     }
-
-    print_program_ast(pg_sl_root);
+    AST(endl << ")");
 }
 
 // stList is decided on the caller
@@ -165,7 +240,9 @@ st_list* stmt_list (st_list* stList) {
         case t_check:
             PREDICT("predict stmt_list --> stmt stmt_list");
 
+            AST("(");
             stList->l_child = stmt ();
+            AST(")" << endl);
 
             new_sl = (st_list*) malloc(sizeof(st_list));
             new_sl->l_child = NULL;
@@ -173,6 +250,7 @@ st_list* stmt_list (st_list* stList) {
 
             stList->r_child = new_sl;
             stList = stList->r_child;
+
 
             stmt_list (stList);
             break;
@@ -194,16 +272,27 @@ st* stmt () {
     st_list* stList;
     st* statement = (st*) malloc(sizeof(st));
     st_list* sl_root;       // do and if
+    set<int> follow_set;
 
     try {
         switch (input_token) {
             case t_id:
                 PREDICT("predict stmt --> id gets expr" << endl);
                 strcpy(statement->id, token_image);
+
+                AST(":= ");
+                AST("\"");
                 match (t_id, true);
+                AST("\"");
+
                 match (t_gets, false);
                 // the bracket only show while there is more than one child
-                rel = relation();
+
+                follow_set = follow_S;
+
+                rel = relation(follow_set);
+                //AST
+                print_relation(rel);
 
                 statement->type = t_id;
                 statement->rel = rel;
@@ -212,8 +301,11 @@ st* stmt () {
             case t_read:
                 PREDICT("predict stmt --> read id" << endl);
                 match (t_read, false);
+                AST("read ");
+                AST("\"");
                 strcpy(statement->id, token_image);
                 match (t_id, true);
+                AST("\"");
 
                 statement->type = t_read;
                 statement->sl = NULL;
@@ -222,7 +314,12 @@ st* stmt () {
             case t_write:
                 PREDICT("predict stmt --> write relation" << endl);
                 match (t_write, false);
-                rel = relation();
+                AST("write");
+
+                follow_set = follow_S;
+
+                rel = relation(follow_set);
+                print_relation(rel);
 
                 statement->type = t_write;
                 statement->rel = rel;
@@ -232,8 +329,15 @@ st* stmt () {
             case t_if:
                 PREDICT("predict stmt --> if R SL fi" << endl);
                 match (t_if, false);
+                AST("if\n");
 
-                rel = relation();
+                follow_set = FIRST("stmt_list");
+                follow_set.insert(t_fi);
+
+                AST("]" << endl);
+                rel = relation(follow_set);
+                print_relation(rel);
+                AST(endl << "[ ");
 
                 sl_root = (st_list*) malloc(sizeof(st_list));
                 stmt_list (sl_root);
@@ -249,8 +353,12 @@ st* stmt () {
                 PREDICT("predict stmt --> do SL od" << endl);
                 match (t_do, false);
 
+                AST("do\n");
+                AST("[ ");
+
                 sl_root = (st_list*) malloc(sizeof(st_list));
                 stmt_list (sl_root);
+                AST("]" << endl);
 
                 statement->type = t_do;
                 statement->sl = sl_root;
@@ -262,8 +370,12 @@ st* stmt () {
             case t_check:
                 PREDICT("predict stmt --> check R" << endl);
                 match (t_check, false);
+                AST("check");
 
-                rel = relation();
+                follow_set = follow_S;
+
+                rel = relation(follow_set);
+                print_relation(rel);
 
                 statement->type = t_check;
                 statement->rel = rel;
@@ -302,7 +414,7 @@ st* stmt () {
 }
 
 // init with null binary_op and return filled binary_op
-bin_op* relation() {
+bin_op* relation(set<int> follow_set) {
     bin_op* binary_op = (bin_op*) malloc(sizeof(bin_op));
     binary_op->type = t_none;
     binary_op->l_child = NULL;
@@ -314,8 +426,8 @@ bin_op* relation() {
             case t_literal:
             case t_lparen:
                 PREDICT("predict relation --> expr expr_tail" << endl);
-                expr (binary_op);
-                expr_tail (binary_op);
+                expr (binary_op, follow_set);
+                expr_tail (binary_op, follow_set);
                 break;
             default:
                 //cerr << "Deleting token: " << token_image << endl;
@@ -328,7 +440,7 @@ bin_op* relation() {
             // recover
             if (find(first_R.begin(), first_R.end(), input_token) != first_R.end()) {
                 cerr << "lineno: " << lineno << ", token: " << token_image << " in first set" << endl;
-                expr(binary_op);
+                expr(binary_op, follow_set);
                 return binary_op;
             } else if (find(follow_R.begin(), follow_R.end(), input_token) != follow_R.end()) {
                 cerr << "lineno: " << lineno << ", token: " << token_image << " in follow set" << endl;
@@ -345,15 +457,15 @@ bin_op* relation() {
     return binary_op;
 }
 
-void expr (bin_op* binary_op) {
+void expr (bin_op* binary_op, set<int> follow_set) {
     try {
         switch (input_token) {
             case t_id:
             case t_literal:
             case t_lparen:
                 PREDICT("predict expr --> term term_tail" << endl);
-                term (binary_op, input_token);
-                term_tail (binary_op, input_token);
+                term (binary_op, follow_set);
+                term_tail (binary_op, follow_set);
                 break;
             default:
                 //cerr << "Deleting token: " << token_image << endl;
@@ -366,7 +478,7 @@ void expr (bin_op* binary_op) {
             // recover
             if (find(first_E.begin(), first_E.end(), input_token) != first_E.end()) {
                 cerr << "lineno: " << lineno << ", token: " << token_image << " in first set" << endl;
-                expr(binary_op);
+                expr(binary_op, follow_set);
                 return;
             } else if (find(follow_E.begin(), follow_E.end(), input_token) != follow_E.end()) {
                 cerr << "lineno: " << lineno << ", token: " << token_image << " in follow set" << endl;
@@ -382,7 +494,10 @@ void expr (bin_op* binary_op) {
     }
 }
 
-void expr_tail(bin_op* binary_op) {
+void expr_tail(bin_op* binary_op, set<int> follow_set) {
+    follow_set.insert(ro.begin(), ro.end());
+    check_for_error(__FUNCTION__, follow_set);
+
     switch (input_token) {
         case t_eq:
         case t_noteq:
@@ -391,7 +506,7 @@ void expr_tail(bin_op* binary_op) {
         case t_lte:
         case t_gte:
             relation_op(binary_op);
-            expr(binary_op);
+            expr(binary_op, follow_set);
             break;
         /* Follow(E) */
         case t_eof:
@@ -412,14 +527,14 @@ void expr_tail(bin_op* binary_op) {
     }
 }
 
-void term (bin_op* binary_op, token context) {
+void term (bin_op* binary_op, set<int> follow_set) {
     switch (input_token) {
         case t_id:
         case t_literal:
         case t_lparen:
             PREDICT("predict term --> factor factor_tail" << endl);
-            factor (binary_op, context);
-            factor_tail (binary_op, context);
+            factor (binary_op, follow_set);
+            factor_tail (binary_op, follow_set);
             break;
         default:
             //cerr << "Deleting token: " << token_image << endl;
@@ -427,14 +542,18 @@ void term (bin_op* binary_op, token context) {
     }
 }
 
-void term_tail (bin_op* binary_op, token context) {
+void term_tail (bin_op* binary_op, set<int> follow_set) {
+    follow_set.insert(ao.begin(), ao.end());
+    follow_set.insert(ro.begin(), ro.end());
+    check_for_error(__FUNCTION__, follow_set);
+
     switch (input_token) {
         case t_add:
         case t_sub:
             PREDICT("predict term_tail --> add_op term term_tail" << endl);
             add_op (binary_op);
-            term (binary_op, context);
-            term_tail (binary_op, context);
+            term (binary_op, follow_set);
+            term_tail (binary_op, follow_set);
             break;
         case t_rparen:
         case t_id:
@@ -452,15 +571,6 @@ void term_tail (bin_op* binary_op, token context) {
         case t_do:
         case t_od:
         case t_check:
-//             if (context == t_id) {
-//                 token specfic_token[] = { t_eq, t_noteq, t_gt, t_lt, t_gte, t_lte };
-//                 for (int i = 0; i < 8; i++) {
-//                     if (specfic_token[i] == input_token)
-//                         return;
-//                 }
-//                 throw ExpressionException();
-//             }
-//             else {
                 PREDICT("predict term_tail --> epsilon" << endl);
                 break;          /*  epsilon production */
             //}
@@ -470,14 +580,19 @@ void term_tail (bin_op* binary_op, token context) {
     }
 }
 
-void factor_tail (bin_op* binary_op, token context) {
+void factor_tail (bin_op* binary_op, set<int> follow_set) {
+    follow_set.insert(ao.begin(), ao.end());
+    follow_set.insert(ro.begin(), ro.end());
+    follow_set.insert(mo.begin(), mo.end());
+    check_for_error(__FUNCTION__, follow_set);
+
     switch (input_token) {
         case t_mul:
         case t_div:
             PREDICT("predict factor_tail --> mul_op factor factor_tail" << endl);
             mul_op (binary_op);
-            factor (binary_op, context);
-            factor_tail (binary_op, context);
+            factor (binary_op, follow_set);
+            factor_tail (binary_op, follow_set);
             break;
         /* Follow(factor_tail) */
         case t_add:
@@ -498,15 +613,6 @@ void factor_tail (bin_op* binary_op, token context) {
         case t_do:
         case t_od:
         case t_check:
-//             if (context == t_id) {
-//                 token specfic_token[] = { t_add, t_sub, t_eq, t_noteq, t_gt, t_lt, t_gte, t_lte };
-//                 for (int i = 0; i < 8; i++) {
-//                     if (specfic_token[i] == input_token)
-//                         return;
-//                 }
-//                 throw ExpressionException();
-//             }
-//             else {
                 PREDICT("predict factor_tail --> epsilon" << endl);
                 break;          /*  epsilon production */
             //}
@@ -517,19 +623,25 @@ void factor_tail (bin_op* binary_op, token context) {
 }
 
 void add_child_to_null_node(bin_op* root, bin_op *child) {
-    if (root->l_child == NULL) {
-        root->l_child = child;
-    }
-    else if (root->r_child == NULL) {
-        root->r_child = child;
-    }
+    if (!root)
+        return;
     else {
-        add_child_to_null_node(root->r_child, child);
+        if (root->l_child == NULL) {
+            root->l_child = child;
+        }
+        else if (root->r_child == NULL) {
+            root->r_child = child;
+        }
+        else {
+            // TODO
+            add_child_to_null_node(root->r_child, child);
+        }
     }
 }
 
-void factor (bin_op* binary_op, token context) {
+void factor (bin_op* binary_op, set<int> follow_set) {
     bin_op* child;
+    set<int> follow_set_for_paren;
 
     switch (input_token) {
         case t_id :
@@ -564,7 +676,8 @@ void factor (bin_op* binary_op, token context) {
             PREDICT("predict factor --> lparen expr rparen" << endl);
             match (t_lparen, false);
 
-            child = relation ();
+            follow_set_for_paren.insert(t_rparen);
+            child = relation (follow_set_for_paren);
 
             // find null child
             add_child_to_null_node(binary_op, child);
@@ -586,7 +699,9 @@ void add_or_create_swap_node(bin_op* binary_op, token tok) {
     } else {
         bin_op* new_node = (bin_op*) malloc(sizeof(bin_op));
         new_node->type = tok;
+        new_node->r_child = NULL;
         strcpy(new_node->name, print_names[tok]);
+
         new_node->l_child = binary_op->r_child;
         binary_op->r_child = new_node;
     }
@@ -690,10 +805,14 @@ int main () {
     input_token = scan ();
     program ();
 
-    cout << endl << "[static semantic check]: test do has check" << endl;
-    analysis_do_has_check(pg_sl_root);
-    cout << "[static semantic check]: test check in do" << endl;
-    analysis_check_in_do(pg_sl_root, false);
+//    print_program_ast(pg_sl_root);
+
+//    cout << endl << "[static semantic check]: test do has check" << endl;
+//    analysis_do_has_check(pg_sl_root);
+//    cout << "[static semantic check]: test check in do" << endl;
+//    analysis_check_in_do(pg_sl_root, false);
+
+    // c
 
     return 0;
 }

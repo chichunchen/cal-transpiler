@@ -8,6 +8,11 @@ typedef struct _st_list st_list;
 typedef struct _st st;
 typedef struct _bin_op bin_op;
 
+
+/*
+ * the order must be same as token
+ */
+
 struct _st_list {
     st* l_child;
     _st_list* r_child;
