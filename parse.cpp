@@ -59,6 +59,12 @@ enum Context {
 /*
  * customized exception classes
  */
+struct StatementlistException : public exception {
+    const char * what () const throw () {
+        return "Statementlist Exception";
+    }
+};
+
 struct StatementException : public exception {
     const char * what () const throw () {
         return "Statement Exception";
@@ -205,24 +211,52 @@ void program () {
     pg_sl_root->r_child = NULL;
 
     AST("(program" << endl);
+	try{
+		switch (input_token) {
+			/* First(program) */
+			case t_id:
+			case t_read:
+			case t_write:
+			case t_if:
+			case t_do:
+			case t_check:
+			case t_eof:
+				PREDICT("predict program --> stmt_list eof" << endl);
+				AST("[ ");
+				stmt_list (pg_sl_root);
+				AST("] ");
+				match (t_eof, false);
+				break;
+			default:
+				cerr << "Deleting token: " << token_image << endl;
+				throw StatementlistException();
+		}
+	} catch (StatementlistException ste) {
 
-    switch (input_token) {
-        /* First(program) */
-        case t_id:
-        case t_read:
-        case t_write:
-        case t_if:
-        case t_do:
-        case t_check:
-        case t_eof:
-            PREDICT("predict program --> stmt_list eof" << endl);
-            AST("[ ");
-            stmt_list (pg_sl_root);
-            AST("] ");
-            match (t_eof, false);
-            break;
-        default: error ();
-    }
+		cerr << ste.what() << " " << token_image << " , line number: " << lineno << endl;
+
+		free(pg_sl_root);
+
+		while ((input_token = scan())) {
+			// recover
+			if (find(first_S.begin(), first_S.end(), input_token) != first_S.end()) {
+				//cerr << "line: " << lineno << ", token: " << token_image << " in first set" << endl;
+				program();
+				input_token = scan();
+				return;
+			} else if (find(follow_S.begin(), follow_S.end(), input_token) != follow_S.end()) {
+				//cerr << "line: " << lineno << ", token: " << token_image << " in follow set" << endl;
+				input_token = scan();
+				return;
+			} else {
+				cerr << "deleting token: " << token_image << ", error around line: " << lineno << endl;
+				input_token = scan();
+
+				if (input_token == t_eof)
+					return;
+			}
+		}
+	}
     AST(endl << ")");
 }
 
@@ -230,40 +264,41 @@ void program () {
 st_list* stmt_list (st_list* stList) {
     st_list* new_sl;
 
-    switch (input_token) {
-        /* First(stmt_list) */
-        case t_id:
-        case t_read:
-        case t_write:
-        case t_if:
-        case t_do:
-        case t_check:
-            PREDICT("predict stmt_list --> stmt stmt_list");
+	switch (input_token) {
+		/* First(stmt_list) */
+		case t_id:
+		case t_read:
+		case t_write:
+		case t_if:
+		case t_do:
+		case t_check:
+			PREDICT("predict stmt_list --> stmt stmt_list");
 
-            AST("(");
-            stList->l_child = stmt ();
-            AST(")" << endl);
+			AST("(");
+			stList->l_child = stmt ();
+			AST(")" << endl);
 
-            new_sl = (st_list*) malloc(sizeof(st_list));
-            new_sl->l_child = NULL;
-            new_sl->r_child = NULL;
+			new_sl = (st_list*) malloc(sizeof(st_list));
+			new_sl->l_child = NULL;
+			new_sl->r_child = NULL;
 
-            stList->r_child = new_sl;
-            stList = stList->r_child;
+			stList->r_child = new_sl;
+			stList = stList->r_child;
 
 
-            stmt_list (stList);
-            break;
-        /* Follow(stmt_list) has (Follow(stmt) and Follow(R)) */
-        case t_eof:
-        case t_fi:
-        case t_od:
-            PREDICT("predict stmt_list --> epsilon" << endl);
-            break;          /*  epsilon production */
-        default:
-            error ();
-    }
-    return stList;
+			stmt_list (stList);
+			break;
+			/* Follow(stmt_list) has (Follow(stmt) and Follow(R)) */
+		case t_eof:
+		case t_fi:
+		case t_od:
+			PREDICT("predict stmt_list --> epsilon" << endl);
+			break;          /*  epsilon production */
+		default:
+			cerr << "Deleting token: " << token_image << endl;
+			throw StatementlistException();
+	}
+	return stList;
 }
 
 st* stmt () {
