@@ -17,6 +17,7 @@
 #include "ast.h"
 #include "semantic.h"
 #include "debug.h"
+#include "compile.h"
 
 using namespace std;
 
@@ -852,6 +853,7 @@ int main () {
     analysis_check_in_do(pg_sl_root, false);
 
     // c
+    compileToC(pg_sl_root);
 
     return 0;
 }

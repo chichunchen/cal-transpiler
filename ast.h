@@ -33,7 +33,7 @@ struct _bin_op {
 };
 
 void print_program_ast(st_list* root);
-void print_stmt_list(st_list* root);
+void print_stmt_list(st_list *root);
 void print_relation(bin_op* root);
 
 #endif

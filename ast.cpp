@@ -11,7 +11,7 @@ void print_program_ast(st_list* root) {
     cout << endl << ") ";
 }
 
-void print_stmt_list(st_list* root) {
+void print_stmt_list(st_list *root) {
     if (root->l_child != NULL) {
         cout << "(";
         switch(root->l_child->type) {

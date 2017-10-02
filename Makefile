@@ -6,8 +6,8 @@
 CC = g++
 CFLAGS = -g -Wall -O2
 
-parse: parse.o scan.o ast.o semantic.o
-	$(CC) $(CFLAGS) -o parse parse.o scan.o ast.o semantic.o
+parse: parse.o scan.o ast.o semantic.o compile.o
+	$(CC) $(CFLAGS) -o parse parse.o scan.o ast.o semantic.o compile.o
 
 clean:
 	rm *.o parse
@@ -34,3 +34,4 @@ parse.o: scan.h debug.h
 scan.o: scan.h debug.h
 ast.o: ast.h scan.h debug.h
 semantic.o: scan.h debug.h semantic.h
+compile.o: scan.h debug.h compile.h
