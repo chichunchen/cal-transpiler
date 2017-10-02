@@ -19,30 +19,13 @@ void compileToC(st_list* root)  {
     outputC.open ("test.c");
     compile_program_ast(root);
     outputC.close();
-//
-//    int pid = fork();
-//    string s = "/bin/ls";
-//    char *args[] = { (char*) s.c_str(), 0 };
-//
-//    if (pid < 0) {
-//        cerr << "interpret error" << endl;
-//    }
-//    else if (pid == 0) {        // child
-//        if (execve("ls", args, NULL) != -1) {
-//            cerr << "execvp error" << endl;
-//        }
-//    }
-//    else {
-//        int status;
-//        waitpid(pid, &status, WNOHANG | WUNTRACED);
-//    }
 }
 
 void parse_variable(st_list* root) {
     if (!root)
         return;
     if (root->l_child) {
-        if (root->l_child->type == t_id) {
+        if (root->l_child->type == t_id || root->l_child->type == t_read) {
             variables.insert(string(root->l_child->id));
         }
         else if (root->l_child->type == t_if || root->l_child->type == t_do) {
@@ -113,6 +96,10 @@ void compile_stmt_list(st_list *root) {
 
 // prefix tree traversal
 void compile_relation(bin_op* root) {
+    if (root->l_child != NULL && root->r_child != NULL) {
+        outputC << " (";
+    }
+
     if (root->l_child) {
         compile_relation(root->l_child);
     }
@@ -131,5 +118,9 @@ void compile_relation(bin_op* root) {
 
     if (root->r_child) {
         compile_relation(root->r_child);
+    }
+
+    if (root->l_child != NULL && root->r_child != NULL) {
+        outputC << ")";
     }
 }
