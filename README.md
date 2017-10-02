@@ -1,83 +1,14 @@
-# A2
+# Syntax Error Recovery with AST output, Basic static semantic check, and compiling to C
 
-### Tests
-Makefile test the output of ast and static semantic check.
-```
-./parse < test01.txt > output01.txt                                                      │
-diff --ignore-all-space correct01.txt output01.txt                                       │
-./parse < test02.txt > output02.txt                                                      │
-diff --ignore-all-space correct02.txt output02.txt                                       │
-./parse < test03.txt > output03.txt                                                      │
-diff --ignore-all-space correct03.txt output03.txt                                       │
-./parse < test04.txt > output04.txt                                                      │
-diff --ignore-all-space correct04.txt output04.txt
-```
-
-### Error Detector
-- test from Michael's mail
-```
-sum := ( x x < yy )
-(program
-[ (:= "sum"Expression Exception: error in line number: 1
-follow:  in lineno: 1, token: lt
-Expression Exception: error in line number: 2
-deleting token: eof, error in lineno: 2
-
-match error in line: 2 , get eof, insert: rparen
-  (< (id "x") (id "yy")))
-]
-)
-```
-- test06
-```
-read a read b read c write ( a * ( b + c
-(program
-[ (read "a")
-(read "b")
-(read "c")
-(writeExpression Exception: error in line number: 1
-discard token: eof, error in lineno: 1
-Expression Exception: error in line number: 1
-discard token: eof, error in lineno: 1
-  (* (id "a")  (+ (id "b") (id "c"))))
-]
-)
-```
-- test07
-```
-Y := (A * X write A * B
-(*  (* (id "A") (id "X")) (id "B")))
-```
-- test08
-```
-(program
-[ (read "a")
-(read "b")
-(:= "Y"Relation Exception , line number: 1
-first: in lineno: 1, token: a
- (* (id "a") (id "b")))
-]
-)
-```
-- test09
-```
-(program                                                                                 
-[ (read "a")                                                                             
-(write  (add (id "a")  (mul (num "4") (num "5"))))                                      
-(write (num "3"))                                                                     
-]                                                                   
-)
-```
-
-### TODO
+### What has done
 - [X] Translate the code to c++ (no error in g++)
     - [X] Translate to c++ style
-- [ ] Write test cases with Makefile
-    - [ ] testXX.txt as the code of calculator language
-    - [ ] outputXX.txt as the output AST for the correspondent testXX.txt
+- [X] Write test cases with Makefile
+    - [X] testXX.txt as the code of calculator language
+    - [X] outputXX.txt as the output AST for the correspondent testXX.txt
 - [X] Extend the language with if and do/check statements
 - [X] Implement exception-based syntax error recovery, as described in Section 2.3.5 on the textbook’s companion site.
-At the least, you should attach handlers to statements, relations, and expressions.
+- [X] Implement context-specific look ahead for immediate error detection
 - [X] Output a syntax tree with the structure suggested
     - [X] Build an abstract syntax tree
     - [X] Order of operator
@@ -178,3 +109,75 @@ $$  <--- do not need to write in the file I guess
   ]
 )
 ```
+
+
+### Tests
+Makefile test the output of ast and static semantic check.
+```
+./parse < test01.txt > output01.txt               
+diff --ignore-all-space correct01.txt output01.txt
+./parse < test02.txt > output02.txt               
+diff --ignore-all-space correct02.txt output02.txt
+./parse < test03.txt > output03.txt               
+diff --ignore-all-space correct03.txt output03.txt
+./parse < test04.txt > output04.txt               
+diff --ignore-all-space correct04.txt output04.txt
+```
+
+### Error Detector
+- test from Michael's mail
+```
+sum := ( x x < yy )
+(program
+[ (:= "sum"Expression Exception: error in line number: 1
+follow:  in lineno: 1, token: lt
+Expression Exception: error in line number: 2
+deleting token: eof, error in lineno: 2
+
+match error in line: 2 , get eof, insert: rparen
+  (< (id "x") (id "yy")))
+]
+)
+```
+- test06
+```
+read a read b read c write ( a * ( b + c
+(program
+[ (read "a")
+(read "b")
+(read "c")
+(writeExpression Exception: error in line number: 1
+discard token: eof, error in lineno: 1
+Expression Exception: error in line number: 1
+discard token: eof, error in lineno: 1
+  (* (id "a")  (+ (id "b") (id "c"))))
+]
+)
+```
+- test07
+```
+Y := (A * X write A * B
+(*  (* (id "A") (id "X")) (id "B")))
+```
+- test08
+```
+(program
+[ (read "a")
+(read "b")
+(:= "Y"Relation Exception , line number: 1
+first: in lineno: 1, token: a
+ (* (id "a") (id "b")))
+]
+)
+```
+- test09
+```
+(program                                                                                 
+[ (read "a")                                                                             
+(write  (add (id "a")  (mul (num "4") (num "5"))))                                      
+(write (num "3"))                                                                     
+]                                                                   
+)
+```
+### For More Details such as context specific error detction
+please see README.pdf
