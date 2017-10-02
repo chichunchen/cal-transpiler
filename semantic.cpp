@@ -2,6 +2,16 @@
 
 using namespace std;
 
+bool correct_semantic = true;
+
+bool semantic_analysis(st_list* root) {
+    cout << endl << "[static semantic check]: test do has check" << endl;
+    analysis_do_has_check(root);
+    cout << "[static semantic check]: test check in do" << endl;
+    analysis_check_in_do(root, false);
+    return correct_semantic;
+}
+
 bool check_inside_do(st_list* root) {
     if (root->l_child && root->l_child->type == t_check) {
         return true;
@@ -25,6 +35,7 @@ void analysis_do_has_check(st_list *root) {
         if (root->l_child->type == t_do) {
             if (!check_inside_do(root->l_child->sl)) {
                 cout << "do [" << count << "] has no check in it" << endl;
+                correct_semantic = false;
             }
             else {
                 cout << "do [" << count << "] has check in it" << endl;
@@ -54,6 +65,7 @@ void analysis_check_in_do(st_list *root, bool is_check) {
         }
         else {
             cout << "check [" << count << "] not in do" << endl;
+            correct_semantic = false;
         }
         count++;
     }

@@ -9,8 +9,14 @@ CFLAGS = -g -Wall -O2
 parse: parse.o scan.o ast.o semantic.o compile.o
 	$(CC) $(CFLAGS) -o parse parse.o scan.o ast.o semantic.o compile.o
 
+compile:
+	gcc test.c
+	./a.out
+
 clean:
 	rm *.o parse
+	rm test.c
+	rm a.out
 
 test01:
 	./parse < test01.txt > output01.txt

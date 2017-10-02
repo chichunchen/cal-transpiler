@@ -94,7 +94,7 @@ const char* print_names[] = {"read", "write", "id", "literal", "gets",
 
 static token input_token;
 
-bool has_error = false;
+bool has_syntax_error = false;
 
 bool EPS(const char* symbol) {
     if (strcmp(symbol, "stmt_list") == 0
@@ -111,29 +111,35 @@ set<int> FIRST(const char* symbol) {
     if (strcmp(symbol, "stmt") == 0)
         return first_S;
 
-    if (strcmp(symbol, "relation") == 0)
+    else if (strcmp(symbol, "relation") == 0)
         return first_R;
 
-    if (strcmp(symbol, "expr") == 0)
+    else if (strcmp(symbol, "expr") == 0)
         return first_R;
 
-    if (strcmp(symbol, "stmt_list") == 0)
+    else if (strcmp(symbol, "stmt_list") == 0)
         return first_S;
 
-    if (strcmp(symbol, "expr_tail") == 0)
+    else if (strcmp(symbol, "expr_tail") == 0)
         return ro;
 
-    if (strcmp(symbol, "term") == 0)
+    else if (strcmp(symbol, "term") == 0)
         return first_R;
 
-    if (strcmp(symbol, "term_tail") == 0)
+    else if (strcmp(symbol, "term_tail") == 0)
         return ao;
 
-    if (strcmp(symbol, "factor") == 0)
+    else if (strcmp(symbol, "factor") == 0)
         return first_R;
 
-    if (strcmp(symbol, "factor_tail") == 0)
+    else if (strcmp(symbol, "factor_tail") == 0)
         return mo;
+
+    else {
+        cerr << "error in FIRST" << endl;
+        set<int> empty;
+        return empty;
+    }
 }
 
 void check_for_error(const char* symbol, set<int> follow_set) {
@@ -146,10 +152,10 @@ void check_for_error(const char* symbol, set<int> follow_set) {
 
     if (!(first_set.find(input_token) != first_set.end()
           || (EPS(symbol) && follow_set.find(input_token) != follow_set.end()))) {
-        has_error = true;
+        has_syntax_error = true;
         cerr << "\nError at " << symbol << " around line: " << lineno << ", using context specific follow to settle." << endl;
         do {
-            cerr << "Delete token: " << names[input_token] << endl;
+            cerr << "Delete token: " << token_image << endl;
             input_token = scan();
 
         } while (!(first_set.find(input_token) != first_set.end()
@@ -179,9 +185,9 @@ void match (token expected, bool print) {
         input_token = scan ();
     }
     else {
-        has_error = true;
+        has_syntax_error = true;
         cerr << endl;
-        cerr << "match error around line: " << lineno << " , get " << names[input_token] <<
+        cerr << "match error around line: " << lineno << " , get " << token_image <<
                 ", insert: " << names[expected] << endl;
         return;
     }
@@ -232,8 +238,7 @@ void program () {
 				throw StatementlistException();
 		}
 	} catch (StatementlistException ste) {
-
-		cerr << ste.what() << " " << token_image << " , line number: " << lineno << endl;
+        cerr << ste.what() << " , line number: " << lineno << ", delete: " << token_image << endl;
 
 		free(pg_sl_root);
 
@@ -326,8 +331,6 @@ st* stmt () {
                 follow_set = follow_S;
 
                 rel = relation(follow_set);
-                //AST
-                //print_relation(rel);
 
                 statement->type = t_id;
                 statement->rel = rel;
@@ -354,7 +357,6 @@ st* stmt () {
                 follow_set = follow_S;
 
                 rel = relation(follow_set);
-                //print_relation(rel);
 
                 statement->type = t_write;
                 statement->rel = rel;
@@ -371,7 +373,6 @@ st* stmt () {
 
                 AST("]" << endl);
                 rel = relation(follow_set);
-                //print_relation(rel);
                 AST(endl << "[ ");
 
                 sl_root = (st_list*) malloc(sizeof(st_list));
@@ -410,7 +411,6 @@ st* stmt () {
                 follow_set = follow_S;
 
                 rel = relation(follow_set);
-                //print_relation(rel);
 
                 statement->type = t_check;
                 statement->rel = rel;
@@ -423,8 +423,8 @@ st* stmt () {
                 throw StatementException();
         }
     } catch (StatementException se) {
-        cerr << se.what() << " " << token_image << " , line number: " << lineno << endl;
-        has_error = true;
+        cerr << se.what() << " , line number: " << lineno << ", delete: " << token_image << endl;
+        has_syntax_error = true;
 
         while ((input_token = scan())) {
             // recover
@@ -470,8 +470,8 @@ bin_op* relation(set<int> follow_set) {
                 throw RelationException();
         }
     } catch (RelationException &re) {
-        cerr << re.what() << " , line number: " << lineno << endl;
-        has_error = true;
+        cerr << re.what() << " , line number: " << lineno << ", delete: " << token_image << endl;
+        has_syntax_error = true;
 
         while ((input_token = scan())) {
             // recover
@@ -510,7 +510,7 @@ void expr (bin_op* binary_op, set<int> follow_set) {
         }
     } catch (ExpressionException& ee) {
         cerr << endl << ee.what() << ": error around line number: " << lineno << ", delete token: " << token_image << endl;
-        has_error = true;
+        has_syntax_error = true;
 
         while ((input_token = scan())) {
             // recover
@@ -843,17 +843,17 @@ int main () {
     input_token = scan ();
     program ();
 
-    if (!has_error) {
+    if (!has_syntax_error) {
         print_program_ast(pg_sl_root);
     }
 
-    cout << endl << "[static semantic check]: test do has check" << endl;
-    analysis_do_has_check(pg_sl_root);
-    cout << "[static semantic check]: test check in do" << endl;
-    analysis_check_in_do(pg_sl_root, false);
-
-    // c
-    compileToC(pg_sl_root);
+    if (semantic_analysis(pg_sl_root)) {
+        cout << "Pass static semantic check, compile by typing `make compile`!" << endl;
+        compileToC(pg_sl_root);
+    }
+    else {
+        cout << "Fail static semantic check, do not compile!" << endl;
+    }
 
     return 0;
 }
