@@ -1,0 +1,9 @@
+read n
+count := 1
+do
+    check 1
+    count := count + 1
+    read a_n
+    n := n + a_n
+    write n / count
+od
