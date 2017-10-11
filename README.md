@@ -1,24 +1,21 @@
-# Syntax Error Recovery with AST output, Basic static semantic check, and compiling to C
+# calculator language transpiler
 
-### What has done
-- [X] Translate the code to c++ (no error in g++)
-    - [X] Translate to c++ style
-- [X] Write test cases with Makefile
-    - [X] testXX.txt as the code of calculator language
-    - [X] outputXX.txt as the output AST for the correspondent testXX.txt
-- [X] Extend the language with if and do/check statements
-- [X] Implement exception-based syntax error recovery, as described in Section 2.3.5 on the textbook’s companion site.
-- [X] Implement context-specific look ahead for immediate error detection
-- [X] Output a syntax tree with the structure suggested
-    - [X] Build an abstract syntax tree
-    - [X] Order of operator
-    - [X] Shows bracket in R if more than one child
-- [X] Implement a static semantic check to ensure that every check statement appears inside a do statement, and every
-do statement has at least one check statement that is inside it and not inside any nested do. 
-- [X] Translate to C
+### Feature
+
+- Parse extended caculator with top-down descent approach
+- Syntax Error Detection/Recovery
+    - Exception based
+    - Context specific look ahead for immediate error detection
+- Construct AST
+- Static semantic check for do/check
+    - Every check statement appears inside a do statement
+    - Every do statement has at least one check statement that is inside it and not inside any nested do. 
+- Translate to C
 
 ### Extended Grammar
-- Here the new nonterminal R is meant to suggest a “relation.”  As in C, a value of 0 is taken to be false; anything else is true.
+
+- Here the new nonterminal R is meant to suggest a “relation.”
+As in C, a value of 0 is taken to be false; anything else is true.
 - The relational operators (==, <> [not equal], <, >, <=, and >=) produce either 0 or 1 when evaluated.
 - A do loop is intended to iterate until some check-ed relation inside it evaluates to false— “check R” is analogous to “if (!R) break” in C.
 
